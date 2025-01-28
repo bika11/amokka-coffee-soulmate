@@ -9,6 +9,7 @@ export interface Coffee {
   flavorNotes: FlavorNote[];
   url: string;
   imageUrl: string;
+  priority: number;
 }
 
 export const FLAVOR_NOTES: FlavorNote[] = [
@@ -29,39 +30,8 @@ export const COFFEES: Coffee[] = [
     roastLevel: 4,
     flavorNotes: ["chocolate", "nuts", "sweet"],
     url: "https://amokka.com/products/amokka-crema",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
-  },
-  {
-    name: "Gorgona Dark Roast Italian Blend",
-    description: "Bold and intense Italian-style blend with deep chocolate notes.",
-    roastLevel: 6,
-    flavorNotes: ["chocolate", "nuts", "roasted"],
-    url: "https://amokka.com/products/gorgona-dark-roast-italian-blend",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
-  },
-  {
-    name: "Portofino Dark Roast",
-    description: "Rich dark roast with complex spices and chocolate undertones.",
-    roastLevel: 5,
-    flavorNotes: ["roasted", "spices", "chocolate"],
-    url: "https://amokka.com/products/portofino-dark-roast",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
-  },
-  {
-    name: "City Roast",
-    description: "Medium roast with balanced sweetness and nutty profile.",
-    roastLevel: 4,
-    flavorNotes: ["nuts", "chocolate", "sweet"],
-    url: "https://amokka.com/products/city-roast",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
-  },
-  {
-    name: "Treehugger Organic Blend",
-    description: "Organic blend with spicy and nutty characteristics.",
-    roastLevel: 3,
-    flavorNotes: ["chocolate", "nuts", "spices"],
-    url: "https://amokka.com/products/treehugger-organic-blend",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 1
   },
   {
     name: "Sombra Dark Roast",
@@ -69,23 +39,17 @@ export const COFFEES: Coffee[] = [
     roastLevel: 6,
     flavorNotes: ["roasted", "spices", "fruity"],
     url: "https://amokka.com/products/sombra-dark-roast",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 2
   },
   {
-    name: "Indonesia Mandheling",
-    description: "Complex profile with dried fruits and warm spices.",
-    roastLevel: 4,
-    flavorNotes: ["dried fruits", "spices", "sweet"],
-    url: "https://amokka.com/products/indonesia-mandheling",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
-  },
-  {
-    name: "Peru",
-    description: "Light roast with bright fruity notes and chocolate finish.",
-    roastLevel: 1,
-    flavorNotes: ["nuts", "chocolate", "fruity"],
-    url: "https://amokka.com/products/peru",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
+    name: "Treehugger Organic Blend",
+    description: "Organic blend with spicy and nutty characteristics.",
+    roastLevel: 3,
+    flavorNotes: ["chocolate", "nuts", "spices"],
+    url: "https://amokka.com/products/treehugger-organic-blend",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 3
   },
   {
     name: "Ethiopia Haji Suleiman",
@@ -93,6 +57,52 @@ export const COFFEES: Coffee[] = [
     roastLevel: 2,
     flavorNotes: ["fruity", "sweet", "floral"],
     url: "https://amokka.com/products/ethiopia-haji-suleiman",
-    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 4
+  },
+  {
+    name: "Peru",
+    description: "Light roast with bright fruity notes and chocolate finish.",
+    roastLevel: 1,
+    flavorNotes: ["nuts", "chocolate", "fruity"],
+    url: "https://amokka.com/products/peru",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 5
+  },
+  {
+    name: "Gorgona Dark Roast Italian Blend",
+    description: "Bold and intense Italian-style blend with deep chocolate notes.",
+    roastLevel: 6,
+    flavorNotes: ["chocolate", "nuts", "roasted"],
+    url: "https://amokka.com/products/gorgona-dark-roast-italian-blend",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 6
+  },
+  {
+    name: "Portofino Dark Roast",
+    description: "Rich dark roast with complex spices and chocolate undertones.",
+    roastLevel: 5,
+    flavorNotes: ["roasted", "spices", "chocolate"],
+    url: "https://amokka.com/products/portofino-dark-roast",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 7
+  },
+  {
+    name: "City Roast",
+    description: "Medium roast with balanced sweetness and nutty profile.",
+    roastLevel: 4,
+    flavorNotes: ["nuts", "chocolate", "sweet"],
+    url: "https://amokka.com/products/city-roast",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 8
+  },
+  {
+    name: "Indonesia Mandheling",
+    description: "Complex profile with dried fruits and warm spices.",
+    roastLevel: 4,
+    flavorNotes: ["dried fruits", "spices", "sweet"],
+    url: "https://amokka.com/products/indonesia-mandheling",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    priority: 9
   }
 ];

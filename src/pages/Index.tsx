@@ -51,6 +51,31 @@ const Index = () => {
     );
   };
 
+  const findRecommendedCoffee = (excludeCoffee?: Coffee): Coffee => {
+    const coffeeScores = COFFEES
+      .filter(coffee => !excludeCoffee || coffee.name !== excludeCoffee.name)
+      .map((coffee) => {
+        let score = 0;
+        // Roast level matching (0-10 points)
+        const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
+        score += (5 - roastDiff) * 2;
+
+        // Flavor matching (0-15 points)
+        selectedFlavors.forEach((flavor) => {
+          if (coffee.flavorNotes.includes(flavor)) {
+            score += 5;
+          }
+        });
+
+        // Priority bonus (1-9 points)
+        score += (10 - coffee.priority);
+
+        return { coffee, score };
+      });
+
+    return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
+  };
+
   const handleGetRecommendation = () => {
     const recommendedCoffee = findRecommendedCoffee();
     setRecommendation(recommendedCoffee);
@@ -66,20 +91,8 @@ const Index = () => {
     setRecommendation(null);
   };
 
-  const findRecommendedCoffee = (): Coffee => {
-    const coffeeScores = COFFEES.map((coffee) => {
-      let score = 0;
-      const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
-      score += 3 - roastDiff;
-      selectedFlavors.forEach((flavor) => {
-        if (coffee.flavorNotes.includes(flavor)) {
-          score += 5;
-        }
-      });
-      return { coffee, score };
-    });
-
-    return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
+  const handleTryAnother = (currentCoffee: Coffee): Coffee => {
+    return findRecommendedCoffee(currentCoffee);
   };
 
   const renderStep = () => {
@@ -161,6 +174,7 @@ const Index = () => {
           <CoffeeRecommendation
             coffee={recommendation}
             onReset={handleReset}
+            onTryAnother={handleTryAnother}
           />
         ) : null;
       default:
