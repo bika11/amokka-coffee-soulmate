@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -22,6 +22,25 @@ const Index = () => {
   const [brewMethod, setBrewMethod] = useState<BrewMethod | null>(null);
   const [recommendation, setRecommendation] = useState<Coffee | null>(null);
 
+  // Auto-proceed when valid selections are made
+  useEffect(() => {
+    if (drinkStyle) {
+      setStep(2);
+    }
+  }, [drinkStyle]);
+
+  useEffect(() => {
+    if (selectedFlavors.length >= 2) {
+      setStep(4);
+    }
+  }, [selectedFlavors]);
+
+  useEffect(() => {
+    if (brewMethod) {
+      handleGetRecommendation();
+    }
+  }, [brewMethod]);
+
   const handleFlavorToggle = (flavor: FlavorNote) => {
     setSelectedFlavors((prev) =>
       prev.includes(flavor)
@@ -32,13 +51,10 @@ const Index = () => {
     );
   };
 
-  const handleNext = () => {
-    if (step === 4) {
-      // Calculate recommendation
-      const recommendedCoffee = findRecommendedCoffee();
-      setRecommendation(recommendedCoffee);
-    }
-    setStep((prev) => prev + 1);
+  const handleGetRecommendation = () => {
+    const recommendedCoffee = findRecommendedCoffee();
+    setRecommendation(recommendedCoffee);
+    setStep(5);
   };
 
   const handleReset = () => {
@@ -51,41 +67,19 @@ const Index = () => {
   };
 
   const findRecommendedCoffee = (): Coffee => {
-    // Simple scoring system
     const coffeeScores = COFFEES.map((coffee) => {
       let score = 0;
-
-      // Roast level match (0-3 points)
       const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
       score += 3 - roastDiff;
-
-      // Flavor notes match (0-5 points per match)
       selectedFlavors.forEach((flavor) => {
         if (coffee.flavorNotes.includes(flavor)) {
           score += 5;
         }
       });
-
       return { coffee, score };
     });
 
-    // Return the coffee with the highest score
     return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
-  };
-
-  const canProceed = () => {
-    switch (step) {
-      case 1:
-        return drinkStyle !== null;
-      case 2:
-        return true; // Roast level always has a value
-      case 3:
-        return selectedFlavors.length >= 2;
-      case 4:
-        return brewMethod !== null;
-      default:
-        return false;
-    }
   };
 
   const renderStep = () => {
@@ -119,6 +113,9 @@ const Index = () => {
               Select your preferred roast level
             </h2>
             <RoastLevelSlider value={roastLevel} onChange={setRoastLevel} />
+            <div className="flex justify-end">
+              <Button onClick={() => setStep(3)}>Next</Button>
+            </div>
           </div>
         );
       case 3:
@@ -178,22 +175,6 @@ const Index = () => {
         <div className="min-h-[300px] flex items-center justify-center">
           {renderStep()}
         </div>
-        {step < 5 && (
-          <div className="flex justify-end">
-            {step > 1 && (
-              <Button
-                variant="outline"
-                onClick={() => setStep((prev) => prev - 1)}
-                className="mr-4"
-              >
-                Back
-              </Button>
-            )}
-            <Button onClick={handleNext} disabled={!canProceed()}>
-              {step === 4 ? "Get Recommendation" : "Next"}
-            </Button>
-          </div>
-        )}
       </Card>
     </div>
   );

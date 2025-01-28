@@ -83,14 +83,6 @@ export const COFFEES: Coffee[] = [
     roastLevel: 2,
     flavorNotes: ['fruity', 'sweet', 'floral'],
     description: 'Light roast with floral aroma and sweet fruit notes'
-  },
-  {
-    id: 'amokka-decaf',
-    name: 'Amokka Decaf',
-    url: 'https://amokka.com/products/amokka-decaf',
-    roastLevel: 3,
-    flavorNotes: ['nuts', 'chocolate', 'sweet'],
-    description: 'Decaf with classic chocolate and nut profile'
   }
 ];
 
