@@ -1,89 +1,98 @@
-export type FlavorNote = 'chocolate' | 'dried fruits' | 'nuts' | 'roasted' | 'spices' | 'fruity' | 'sweet' | 'floral';
-export type BrewMethod = 'Espresso' | 'Filter';
-export type DrinkStyle = 'Straight up' | 'With milk';
+export type FlavorNote = "chocolate" | "dried fruits" | "nuts" | "roasted" | "spices" | "fruity" | "sweet" | "floral";
+export type DrinkStyle = "Straight up" | "With milk";
+export type BrewMethod = "Espresso" | "Filter";
 
 export interface Coffee {
-  id: string;
   name: string;
-  url: string;
+  description: string;
   roastLevel: number;
   flavorNotes: FlavorNote[];
-  description: string;
+  url: string;
+  imageUrl: string;
 }
+
+export const FLAVOR_NOTES: FlavorNote[] = [
+  "chocolate",
+  "dried fruits",
+  "nuts",
+  "roasted",
+  "spices",
+  "fruity",
+  "sweet",
+  "floral"
+];
 
 export const COFFEES: Coffee[] = [
   {
-    id: 'amokka-crema',
-    name: 'Amokka Crema',
-    url: 'https://amokka.com/products/amokka-crema',
+    name: "Amokka Crema",
+    description: "A perfectly balanced espresso blend with rich chocolate and nutty notes.",
     roastLevel: 4,
-    flavorNotes: ['chocolate', 'nuts', 'sweet'],
-    description: 'A balanced blend with rich chocolate notes and nutty sweetness'
+    flavorNotes: ["chocolate", "nuts", "sweet"],
+    url: "https://amokka.com/products/amokka-crema",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'gorgona-dark',
-    name: 'Gorgona Dark Roast Italian Blend',
-    url: 'https://amokka.com/products/gorgona-dark-roast-italian-blend',
+    name: "Gorgona Dark Roast Italian Blend",
+    description: "Bold and intense Italian-style blend with deep chocolate notes.",
     roastLevel: 6,
-    flavorNotes: ['chocolate', 'nuts', 'roasted'],
-    description: 'Bold Italian roast with intense chocolate and roasted notes'
+    flavorNotes: ["chocolate", "nuts", "roasted"],
+    url: "https://amokka.com/products/gorgona-dark-roast-italian-blend",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'portofino-dark',
-    name: 'Portofino Dark Roast',
-    url: 'https://amokka.com/products/portofino-dark-roast',
+    name: "Portofino Dark Roast",
+    description: "Rich dark roast with complex spices and chocolate undertones.",
     roastLevel: 5,
-    flavorNotes: ['roasted', 'spices', 'chocolate'],
-    description: 'Rich dark roast with spicy undertones and chocolate finish'
+    flavorNotes: ["roasted", "spices", "chocolate"],
+    url: "https://amokka.com/products/portofino-dark-roast",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'city-roast',
-    name: 'City Roast',
-    url: 'https://amokka.com/products/city-roast',
+    name: "City Roast",
+    description: "Medium roast with balanced sweetness and nutty profile.",
     roastLevel: 4,
-    flavorNotes: ['nuts', 'chocolate', 'sweet'],
-    description: 'Medium roast with balanced sweetness and nutty profile'
+    flavorNotes: ["nuts", "chocolate", "sweet"],
+    url: "https://amokka.com/products/city-roast",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'treehugger',
-    name: 'Treehugger Organic Blend',
-    url: 'https://amokka.com/products/treehugger-organic-blend',
+    name: "Treehugger Organic Blend",
+    description: "Organic blend with spicy and nutty characteristics.",
     roastLevel: 3,
-    flavorNotes: ['chocolate', 'nuts', 'spices'],
-    description: 'Organic blend with subtle spices and chocolate notes'
+    flavorNotes: ["chocolate", "nuts", "spices"],
+    url: "https://amokka.com/products/treehugger-organic-blend",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'sombra-dark',
-    name: 'Sombra Dark Roast',
-    url: 'https://amokka.com/products/sombra-dark-roast',
+    name: "Sombra Dark Roast",
+    description: "Dark roast with unique fruity notes and bold spices.",
     roastLevel: 6,
-    flavorNotes: ['roasted', 'spices', 'fruity'],
-    description: 'Bold dark roast with unique fruity undertones'
+    flavorNotes: ["roasted", "spices", "fruity"],
+    url: "https://amokka.com/products/sombra-dark-roast",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'indonesia-mandheling',
-    name: 'Indonesia Mandheling',
-    url: 'https://amokka.com/products/indonesia-mandheling',
+    name: "Indonesia Mandheling",
+    description: "Complex profile with dried fruits and warm spices.",
     roastLevel: 4,
-    flavorNotes: ['dried fruits', 'spices', 'sweet'],
-    description: 'Complex medium roast with dried fruit sweetness'
+    flavorNotes: ["dried fruits", "spices", "sweet"],
+    url: "https://amokka.com/products/indonesia-mandheling",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'peru',
-    name: 'Peru',
-    url: 'https://amokka.com/products/peru',
+    name: "Peru",
+    description: "Light roast with bright fruity notes and chocolate finish.",
     roastLevel: 1,
-    flavorNotes: ['nuts', 'chocolate', 'fruity'],
-    description: 'Light roast with bright fruity notes and nutty finish'
+    flavorNotes: ["nuts", "chocolate", "fruity"],
+    url: "https://amokka.com/products/peru",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   },
   {
-    id: 'ethiopia',
-    name: 'Ethiopia Haji Suleiman',
-    url: 'https://amokka.com/products/ethiopia-haji-suleiman',
+    name: "Ethiopia Haji Suleiman",
+    description: "Light and floral with bright fruit notes.",
     roastLevel: 2,
-    flavorNotes: ['fruity', 'sweet', 'floral'],
-    description: 'Light roast with floral aroma and sweet fruit notes'
+    flavorNotes: ["fruity", "sweet", "floral"],
+    url: "https://amokka.com/products/ethiopia-haji-suleiman",
+    imageUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   }
 ];
-
-export const FLAVOR_NOTES: FlavorNote[] = ['chocolate', 'dried fruits', 'nuts', 'roasted', 'spices', 'fruity', 'sweet', 'floral'];

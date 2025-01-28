@@ -12,9 +12,16 @@ export const CoffeeRecommendation = ({
   onReset,
 }: CoffeeRecommendationProps) => {
   return (
-    <div className="space-y-6 text-center">
+    <div className="space-y-6 text-center animate-fade-in">
       <h2 className="text-2xl font-bold">Your Perfect Match</h2>
       <div className="bg-secondary p-6 rounded-lg space-y-4">
+        <div className="w-48 h-48 mx-auto mb-4 overflow-hidden rounded-lg">
+          <img
+            src={coffee.imageUrl}
+            alt={coffee.name}
+            className="w-full h-full object-cover transform transition-transform duration-300 hover:scale-105"
+          />
+        </div>
         <h3 className="text-xl font-semibold">{coffee.name}</h3>
         <p className="text-muted-foreground">{coffee.description}</p>
         <div className="flex flex-wrap gap-2 justify-center">
@@ -27,11 +34,8 @@ export const CoffeeRecommendation = ({
             </span>
           ))}
         </div>
-        <div className="pt-4 space-x-4">
-          <Button onClick={onReset} variant="outline">
-            Start Over
-          </Button>
-          <Button asChild>
+        <div className="pt-4 flex flex-col gap-3 items-center">
+          <Button asChild className="w-full max-w-xs">
             <a
               href={coffee.url}
               target="_blank"
@@ -41,6 +45,13 @@ export const CoffeeRecommendation = ({
               <span>View Coffee</span>
               <ExternalLink className="w-4 h-4" />
             </a>
+          </Button>
+          <Button 
+            onClick={onReset} 
+            variant="outline" 
+            className="w-full max-w-xs"
+          >
+            Start Over
           </Button>
         </div>
       </div>
