@@ -30,7 +30,7 @@ const Index = () => {
   }, [drinkStyle]);
 
   useEffect(() => {
-    if (selectedFlavors.length >= 2) {
+    if (selectedFlavors.length === 3) {  // Changed from 2 to 3
       setStep(4);
     }
   }, [selectedFlavors]);
