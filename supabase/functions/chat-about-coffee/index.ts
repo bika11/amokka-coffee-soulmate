@@ -1,10 +1,19 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; // Use a different version
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
+import { createClient } from "https://deno.land/x/supabase@1.0.0/mod.ts";
 
 config({ export: true });
 
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseKey = Deno.env.get('SUPABASE_KEY');
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
+if (!supabaseUrl || !supabaseKey || !openAIApiKey) {
+  throw new Error('Environment variables SUPABASE_URL, SUPABASE_KEY, or OPENAI_API_KEY are not configured');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,11 +26,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    if (!openAIApiKey) {
-      console.error('OpenAI API key is not configured');
-      throw new Error('OpenAI API key is not configured');
-    }
-
     const { message } = await req.json();
     
     if (!message) {
@@ -29,6 +33,17 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('Processing chat message:', message);
+
+    // Fetch coffee recommendations from Supabase
+    const { data: coffeeRecommendations, error } = await supabase
+      .from('coffee_recommendations')
+      .select('*');
+
+    if (error) {
+      throw new Error(`Supabase query failed: ${error.message}`);
+    }
+
+    console.log('Coffee recommendations:', coffeeRecommendations);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
