@@ -1,5 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 
 config({ export: true });
@@ -11,7 +11,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -65,6 +65,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(error.message, { status: 400, headers: corsHeaders });
   }
-});
+};
 
-console.log("Listening on http://localhost:8000/");
+console.log("Starting server...");
+serve(handler, { port: 8000 });
