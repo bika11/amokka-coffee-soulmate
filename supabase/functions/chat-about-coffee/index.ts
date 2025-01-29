@@ -1,16 +1,17 @@
+/// <reference lib="deno.ns" />
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
-import { createClient } from "https://deno.land/x/supabase@1.0.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@1.35.7";
 
 config({ export: true });
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseKey = Deno.env.get('SUPABASE_KEY');
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
 if (!supabaseUrl || !supabaseKey || !openAIApiKey) {
-  throw new Error('Environment variables SUPABASE_URL, SUPABASE_KEY, or OPENAI_API_KEY are not configured');
+  throw new Error('Environment variables SUPABASE_URL, SUPABASE_ANON_KEY, or OPENAI_API_KEY are not configured');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -34,57 +35,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing chat message:', message);
 
-    // Fetch coffee recommendations from Supabase
-    const { data: coffeeRecommendations, error } = await supabase
-      .from('coffee_recommendations')
-      .select('*');
+    // Add rate limiting here if needed
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([{ content: message }]);
 
     if (error) {
-      throw new Error(`Supabase query failed: ${error.message}`);
+      throw new Error(`Supabase insert failed: ${error.message}`);
     }
 
-    console.log('Coffee recommendations:', coffeeRecommendations);
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a coffee expert chatbot for Amokka Coffee. Only provide information that is available on amokka.com. 
-            If asked about something not related to Amokka's products or services, politely redirect the conversation back to Amokka's offerings.
-            Keep responses concise and friendly. If unsure about specific details, recommend visiting amokka.com for the most up-to-date information.`
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ]
-      })
+    return new Response(JSON.stringify({ 
+      reply: `Received: ${message} (Stored in DB#${data[0].id})`
+    }), {
+      headers: { "Content-Type": "application/json" },
     });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json().catch(() => {
-      throw new Error('Failed to parse JSON response from OpenAI API');
-    });
-
-    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
-    return new Response(error.message, { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+    });
   }
 };
 
 console.log("Starting server...");
-try {
-  serve(handler, { port: 8000 });
-} catch (error) {
-  console.error("Failed to start server:", error);
-}
+serve(handler, { port: 8000 });
+
