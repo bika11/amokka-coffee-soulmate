@@ -26,47 +26,6 @@ serve(async (req) => {
       throw new Error('No preferences provided');
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a coffee expert. Given user preferences, recommend one of these coffees:
-              1. Amokka Crema - balanced espresso with chocolate and nutty notes
-              2. Sombra Dark Roast - dark roast with fruity notes and spices
-              3. Treehugger Organic Blend - organic blend with spicy and nutty notes
-              4. Ethiopia Haji Suleiman - light and floral with fruit notes
-              5. Peru - light roast with fruity notes and chocolate finish
-              6. Gorgona Dark Roast Italian Blend - bold Italian-style with chocolate
-              7. Portofino Dark Roast - rich dark roast with spices and chocolate
-              8. City Roast - medium roast with balanced sweetness and nuts
-              9. Indonesia Mandheling - complex with dried fruits and spices
-              
-              Respond with ONLY the name of the coffee that best matches their preferences.`
-          },
-          { role: 'user', content: preferences }
-        ],
-      }),
-    });
-
-    const data = await response.json();
-    console.log('OpenAI API response:', data);
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response structure:', data);
-      throw new Error('Invalid response structure from OpenAI API');
-    }
-
-    const recommendation = data.choices[0].message.content.trim();
-    console.log('Generated recommendation:', recommendation);
-
-    // Validate that the recommendation matches one of our coffee names
     const validCoffeeNames = [
       "Amokka Crema",
       "Sombra Dark Roast",
@@ -78,6 +37,47 @@ serve(async (req) => {
       "City Roast",
       "Indonesia Mandheling"
     ];
+
+    const systemPrompt = `You are a coffee expert. Based on the user's preferences, recommend ONE coffee from this exact list:
+${validCoffeeNames.map(name => `- ${name}`).join('\n')}
+
+IMPORTANT: Your response must contain ONLY the exact name of ONE coffee from the list above, nothing else. Do not add any explanations or additional text.`;
+
+    console.log('Sending request to OpenAI with system prompt:', systemPrompt);
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: preferences }
+        ],
+        temperature: 0.7,
+        max_tokens: 50
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error('Failed to get response from OpenAI API');
+    }
+
+    const data = await response.json();
+    console.log('OpenAI API response:', data);
+
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response structure from OpenAI API');
+    }
+
+    const recommendation = data.choices[0].message.content.trim();
+    console.log('Generated recommendation:', recommendation);
 
     if (!validCoffeeNames.includes(recommendation)) {
       console.error('Invalid coffee recommendation:', recommendation);
