@@ -67,3 +67,19 @@ Simply open [Lovable](https://lovable.dev/projects/405e9700-f805-432a-8705-fdfa0
 ## I want to use a custom domain - is that possible?
 
 We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+
+## Example usage of environment variables
+
+To use environment variables in your project, you can use the `dotenv` package. Here's an example:
+
+```javascript
+import dotenv from 'dotenv';
+
+// Load environment variables from a .env file into process.env
+dotenv.config();
+
+// Example usage of an environment variable
+const myEnvVar = process.env.MY_ENV_VAR;
+
+console.log(`My environment variable: ${myEnvVar}`);
+```
