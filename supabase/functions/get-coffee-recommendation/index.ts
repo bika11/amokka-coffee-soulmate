@@ -15,8 +15,16 @@ serve(async (req) => {
   }
 
   try {
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
     const { preferences } = await req.json();
     console.log('Received preferences:', preferences);
+
+    if (!preferences) {
+      throw new Error('No preferences provided');
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -25,7 +33,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -47,16 +55,26 @@ serve(async (req) => {
       }),
     });
 
-    console.log('OpenAI API response status:', response.status);
     const data = await response.json();
     console.log('OpenAI API response:', data);
 
-    return new Response(JSON.stringify({ recommendation: data.choices[0].message.content }), {
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response from OpenAI API');
+    }
+
+    const recommendation = data.choices[0].message.content.trim();
+    console.log('Generated recommendation:', recommendation);
+
+    return new Response(JSON.stringify({ recommendation }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in get-coffee-recommendation function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: 'An error occurred while processing your request'
+      }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
