@@ -1,5 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { config } from "https://deno.land/x/dotenv/mod.ts";
+
+config({ export: true });
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -42,39 +45,26 @@ serve(async (req) => {
             If asked about something not related to Amokka's products or services, politely redirect the conversation back to Amokka's offerings.
             Keep responses concise and friendly. If unsure about specific details, recommend visiting amokka.com for the most up-to-date information.`
           },
-          { role: 'user', content: message }
-        ],
-      }),
+          {
+            role: 'user',
+            content: message
+          }
+        ]
+      })
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error('Failed to get response from OpenAI API');
+      throw new Error(`OpenAI API request failed with status ${response.status}`);
     }
 
-    const data = await response.json();
-    
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response structure:', data);
-      throw new Error('Invalid response structure from OpenAI API');
-    }
-
-    const botResponse = data.choices[0].message.content.trim();
-    console.log('Generated response:', botResponse);
-
-    return new Response(JSON.stringify({ response: botResponse }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const data = await response.json().catch(() => {
+      throw new Error('Failed to parse JSON response from OpenAI API');
     });
+
+    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
-    console.error('Error in chat-about-coffee function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: 'An error occurred while processing your request'
-      }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(error.message, { status: 400, headers: corsHeaders });
   }
 });
+
+console.log("Listening on http://localhost:8000/");
