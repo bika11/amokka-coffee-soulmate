@@ -58,12 +58,31 @@ serve(async (req) => {
     const data = await response.json();
     console.log('OpenAI API response:', data);
 
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response from OpenAI API');
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response structure from OpenAI API');
     }
 
     const recommendation = data.choices[0].message.content.trim();
     console.log('Generated recommendation:', recommendation);
+
+    // Validate that the recommendation matches one of our coffee names
+    const validCoffeeNames = [
+      "Amokka Crema",
+      "Sombra Dark Roast",
+      "Treehugger Organic Blend",
+      "Ethiopia Haji Suleiman",
+      "Peru",
+      "Gorgona Dark Roast Italian Blend",
+      "Portofino Dark Roast",
+      "City Roast",
+      "Indonesia Mandheling"
+    ];
+
+    if (!validCoffeeNames.includes(recommendation)) {
+      console.error('Invalid coffee recommendation:', recommendation);
+      throw new Error('Invalid coffee recommendation received');
+    }
 
     return new Response(JSON.stringify({ recommendation }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
