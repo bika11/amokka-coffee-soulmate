@@ -5,6 +5,8 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { FlavorSelector } from "@/components/FlavorSelector";
 import { RoastLevelSlider } from "@/components/RoastLevelSlider";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   COFFEES,
   FLAVOR_NOTES,
@@ -21,6 +23,8 @@ const Index = () => {
   const [selectedFlavors, setSelectedFlavors] = useState<FlavorNote[]>([]);
   const [brewMethod, setBrewMethod] = useState<BrewMethod | null>(null);
   const [recommendation, setRecommendation] = useState<Coffee | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   // Auto-proceed when valid selections are made
   useEffect(() => {
@@ -30,7 +34,7 @@ const Index = () => {
   }, [drinkStyle]);
 
   useEffect(() => {
-    if (selectedFlavors.length === 3) {  // Changed from 2 to 3
+    if (selectedFlavors.length === 3) {
       setStep(4);
     }
   }, [selectedFlavors]);
@@ -49,6 +53,50 @@ const Index = () => {
         ? [...prev, flavor]
         : prev
     );
+  };
+
+  const handleGetRecommendation = async () => {
+    setIsLoading(true);
+    try {
+      const preferences = `I like coffee that is ${
+        drinkStyle === "Straight up" ? "black" : "with milk"
+      }, roast level ${roastLevel}/6, and I enjoy ${selectedFlavors.join(
+        ", "
+      )} flavors. I brew using ${brewMethod?.toLowerCase()}.`;
+
+      const { data, error } = await supabase.functions.invoke(
+        "get-coffee-recommendation",
+        {
+          body: { preferences },
+        }
+      );
+
+      if (error) throw error;
+
+      const recommendedCoffee = COFFEES.find(
+        (coffee) => coffee.name === data.recommendation
+      );
+
+      if (!recommendedCoffee) {
+        throw new Error("Coffee not found in database");
+      }
+
+      setRecommendation(recommendedCoffee);
+      setStep(5);
+    } catch (error) {
+      console.error("Error getting recommendation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get recommendation. Please try again.",
+        variant: "destructive",
+      });
+      // Fallback to existing recommendation logic
+      const recommendedCoffee = findRecommendedCoffee();
+      setRecommendation(recommendedCoffee);
+      setStep(5);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const findRecommendedCoffee = (excludeCoffee?: Coffee): Coffee => {
@@ -74,12 +122,6 @@ const Index = () => {
       });
 
     return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
-  };
-
-  const handleGetRecommendation = () => {
-    const recommendedCoffee = findRecommendedCoffee();
-    setRecommendation(recommendedCoffee);
-    setStep(5);
   };
 
   const handleReset = () => {
@@ -187,7 +229,14 @@ const Index = () => {
       <Card className="w-full max-w-lg p-6 space-y-6">
         <ProgressBar currentStep={step} totalSteps={4} />
         <div className="min-h-[300px] flex items-center justify-center">
-          {renderStep()}
+          {isLoading ? (
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-muted-foreground">Getting your perfect match...</p>
+            </div>
+          ) : (
+            renderStep()
+          )}
         </div>
       </Card>
     </div>
