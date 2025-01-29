@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Coffee } from "@/lib/coffee-data";
 import { ExternalLink, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { ChatBot } from "./ChatBot";
 
 interface CoffeeRecommendationProps {
   coffee: Coffee;
@@ -73,6 +74,7 @@ export const CoffeeRecommendation = ({
           </Button>
         </div>
       </div>
+      <ChatBot />
     </div>
   );
 };
