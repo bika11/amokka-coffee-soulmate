@@ -1,5 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; // Use a different version
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 
 config({ export: true });
@@ -68,4 +68,8 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 console.log("Starting server...");
-serve(handler, { port: 8000 });
+try {
+  serve(handler, { port: 8000 });
+} catch (error) {
+  console.error("Failed to start server:", error);
+}
