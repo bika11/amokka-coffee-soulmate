@@ -3,18 +3,16 @@ import { Button } from "@/components/ui/button";
 
 interface ChatButtonProps {
   onClick: () => void;
-  isBouncing: boolean;
+  isBouncing: boolean;  // keeping this prop for compatibility but won't use bouncing
 }
 
-export const ChatButton = ({ onClick, isBouncing }: ChatButtonProps) => {
+export const ChatButton = ({ onClick }: ChatButtonProps) => {
   return (
     <Button
       onClick={onClick}
-      className={`rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 ${
-        isBouncing ? "animate-bounce" : ""
-      }`}
+      className="rounded-full h-14 w-14 shadow-lg bg-primary/90 hover:bg-primary transition-all duration-300 hover:shadow-xl hover:scale-105 group"
     >
-      <MessageSquare className="h-6 w-6" />
+      <MessageSquare className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" />
     </Button>
   );
 };

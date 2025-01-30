@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -18,16 +18,7 @@ export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isBouncing, setIsBouncing] = useState(true);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsBouncing(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleToggleChat = () => {
     if (!isOpen) {
@@ -75,7 +66,7 @@ export const ChatBot = () => {
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {isOpen ? (
-        <Card className="w-80 h-96 flex flex-col shadow-lg">
+        <Card className="w-80 h-96 flex flex-col shadow-lg animate-fade-in">
           <ChatHeader onClose={handleToggleChat} />
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
@@ -91,7 +82,7 @@ export const ChatBot = () => {
           />
         </Card>
       ) : (
-        <ChatButton onClick={handleToggleChat} isBouncing={isBouncing} />
+        <ChatButton onClick={handleToggleChat} isBouncing={false} />
       )}
     </div>
   );
