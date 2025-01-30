@@ -5,16 +5,18 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { FlavorSelector } from "@/components/FlavorSelector";
 import { RoastLevelSlider } from "@/components/RoastLevelSlider";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
+import { DrinkStyleSelector } from "@/components/DrinkStyleSelector";
+import { BrewMethodSelector } from "@/components/BrewMethodSelector";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   COFFEES,
-  FLAVOR_NOTES,
   type Coffee,
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
 } from "@/lib/coffee-data";
+import { findRecommendedCoffee } from "@/utils/coffee-recommendation";
 
 const Index = () => {
   const [step, setStep] = useState(1);
@@ -56,6 +58,8 @@ const Index = () => {
   };
 
   const handleGetRecommendation = async () => {
+    if (!drinkStyle) return;
+    
     setIsLoading(true);
     try {
       const preferences = `I like coffee that is ${
@@ -91,62 +95,17 @@ const Index = () => {
         variant: "destructive",
       });
       // Fallback to existing recommendation logic
-      const recommendedCoffee = findRecommendedCoffee();
+      const recommendedCoffee = findRecommendedCoffee(
+        COFFEES,
+        drinkStyle,
+        roastLevel,
+        selectedFlavors
+      );
       setRecommendation(recommendedCoffee);
       setStep(5);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const findRecommendedCoffee = (excludeCoffee?: Coffee): Coffee => {
-    const coffeeScores = COFFEES
-      .filter(coffee => !excludeCoffee || coffee.name !== excludeCoffee.name)
-      .map((coffee) => {
-        let score = 0;
-        
-        // Roast level matching (0-30 points) - Highest weight
-        const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
-        const roastScore = Math.max(0, 30 - (roastDiff * 6)); // Each level difference reduces score by 6
-        score += roastScore;
-
-        // Flavor matching (0-15 points) - Medium weight
-        const flavorScore = selectedFlavors.reduce((acc, flavor) => {
-          return acc + (coffee.flavorNotes.includes(flavor) ? 5 : 0);
-        }, 0);
-        score += flavorScore;
-
-        // Drink style compatibility (0-5 points) - Lowest weight
-        if (drinkStyle === "With milk" && coffee.roastLevel >= 4) {
-          score += 5;
-        } else if (drinkStyle === "Straight up" && coffee.roastLevel <= 3) {
-          score += 5;
-        }
-
-        // Priority bonus (1-9 points) - Tiebreaker
-        score += (10 - coffee.priority);
-
-        return { 
-          coffee, 
-          score,
-          // Add debug information
-          debug: {
-            roastScore,
-            flavorScore,
-            drinkStyleScore: score - roastScore - flavorScore - (10 - coffee.priority),
-            priorityBonus: 10 - coffee.priority
-          }
-        };
-      });
-
-    // Log scoring details for debugging
-    console.log('Coffee Scores:', coffeeScores.map(({ coffee, score, debug }) => ({
-      name: coffee.name,
-      totalScore: score,
-      ...debug
-    })));
-
-    return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
   };
 
   const handleReset = () => {
@@ -159,32 +118,24 @@ const Index = () => {
   };
 
   const handleTryAnother = (currentCoffee: Coffee): Coffee => {
-    return findRecommendedCoffee(currentCoffee);
+    if (!drinkStyle) return currentCoffee;
+    return findRecommendedCoffee(
+      COFFEES,
+      drinkStyle,
+      roastLevel,
+      selectedFlavors,
+      currentCoffee
+    );
   };
 
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              How do you drink your coffee?
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant={drinkStyle === "Straight up" ? "default" : "outline"}
-                onClick={() => setDrinkStyle("Straight up")}
-              >
-                Straight up
-              </Button>
-              <Button
-                variant={drinkStyle === "With milk" ? "default" : "outline"}
-                onClick={() => setDrinkStyle("With milk")}
-              >
-                With milk
-              </Button>
-            </div>
-          </div>
+          <DrinkStyleSelector
+            selectedStyle={drinkStyle}
+            onStyleSelect={setDrinkStyle}
+          />
         );
       case 2:
         return (
@@ -216,25 +167,10 @@ const Index = () => {
         );
       case 4:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              How do you brew your coffee?
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant={brewMethod === "Espresso" ? "default" : "outline"}
-                onClick={() => setBrewMethod("Espresso")}
-              >
-                Espresso
-              </Button>
-              <Button
-                variant={brewMethod === "Filter" ? "default" : "outline"}
-                onClick={() => setBrewMethod("Filter")}
-              >
-                Filter
-              </Button>
-            </div>
-          </div>
+          <BrewMethodSelector
+            selectedMethod={brewMethod}
+            onMethodSelect={setBrewMethod}
+          />
         );
       case 5:
         return recommendation ? (
@@ -257,7 +193,9 @@ const Index = () => {
           {isLoading ? (
             <div className="flex flex-col items-center gap-4">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-muted-foreground">Getting your perfect match...</p>
+              <p className="text-muted-foreground">
+                Getting your perfect match...
+              </p>
             </div>
           ) : (
             renderStep()
