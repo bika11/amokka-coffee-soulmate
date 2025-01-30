@@ -13,7 +13,7 @@ export const CoffeeActions = ({ coffee, onTryAnother, onReset }: CoffeeActionsPr
     <div className="pt-4 flex flex-col gap-3 items-center">
       <Button asChild className="w-full max-w-xs">
         <a
-          href={coffee.url}
+          href={coffee.product_link}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center space-x-2"
