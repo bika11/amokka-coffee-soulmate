@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ProgressBar } from "@/components/ProgressBar";
 import { FlavorSelector } from "@/components/FlavorSelector";
 import { RoastLevelSlider } from "@/components/RoastLevelSlider";
 import { DrinkStyleSelector } from "@/components/DrinkStyleSelector";
 import { BrewMethodSelector } from "@/components/BrewMethodSelector";
+import { FormProgress } from "./FormProgress";
 import {
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
-  type Coffee,
   FLAVOR_NOTES,
 } from "@/lib/coffee-data";
 
@@ -124,18 +122,9 @@ export const CoffeeRecommendationForm = ({
 
   return (
     <Card className="w-full max-w-lg p-6 space-y-6">
-      <ProgressBar currentStep={step} totalSteps={4} />
+      <FormProgress currentStep={step} totalSteps={4} isLoading={isLoading} />
       <div className="min-h-[300px] flex items-center justify-center">
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">
-              Getting your perfect match...
-            </p>
-          </div>
-        ) : (
-          renderStep()
-        )}
+        {!isLoading && renderStep()}
       </div>
     </Card>
   );
