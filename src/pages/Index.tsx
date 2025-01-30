@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   COFFEES,
+  FLAVOR_NOTES,
   type Coffee,
   type DrinkStyle,
   type BrewMethod,
