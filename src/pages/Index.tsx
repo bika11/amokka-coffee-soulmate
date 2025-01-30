@@ -79,12 +79,16 @@ const Index = () => {
   };
 
   const handleTryAnother = (currentCoffee: Coffee): Coffee => {
+    // Get all coffees except the current one
+    const remainingCoffees = COFFEES.filter(coffee => coffee.name !== currentCoffee.name);
+    
+    // Find the best match among remaining coffees using the same criteria
     return findBestCoffeeMatch(
-      COFFEES,
-      currentCoffee.milk_compatible ?? true ? "With milk" : "Straight up",
-      currentCoffee.roastLevel,
-      currentCoffee.flavorNotes,
-      currentCoffee // Exclude current coffee from recommendations
+      remainingCoffees,
+      currentCoffee.milk_compatible ? "With milk" : "Straight up",
+      currentCoffee.roast_level,
+      currentCoffee.flavor_notes,
+      currentCoffee // Pass current coffee to exclude it
     );
   };
 
