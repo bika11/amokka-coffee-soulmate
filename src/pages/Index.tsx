@@ -81,7 +81,8 @@ const Index = () => {
   const handleTryAnother = (currentCoffee: Coffee): Coffee => {
     return findRecommendedCoffee(
       COFFEES.filter((coffee) => coffee.name !== currentCoffee.name),
-      currentCoffee.milk_compatible ? "With milk" : "Straight up",
+      // Use a default value of true if milk_compatible is undefined
+      currentCoffee.milk_compatible ?? true ? "With milk" : "Straight up",
       currentCoffee.roastLevel,
       currentCoffee.flavorNotes as FlavorNote[]
     );

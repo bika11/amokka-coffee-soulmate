@@ -10,6 +10,7 @@ export interface Coffee {
   url: string;
   imageUrl: string;
   priority: number;
+  milk_compatible?: boolean;  // Added this property
 }
 
 export const FLAVOR_NOTES: FlavorNote[] = [
