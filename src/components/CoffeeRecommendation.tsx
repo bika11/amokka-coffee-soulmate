@@ -40,15 +40,15 @@ export const CoffeeRecommendation = ({
           </div>
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-6 text-center">
           <div>
             <h3 className="text-2xl font-semibold mb-3">{coffee.name}</h3>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed mx-auto max-w-prose">
               {coffee.description}
             </p>
           </div>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center">
             {coffee.flavorNotes.map((note) => (
               <span
                 key={note}
