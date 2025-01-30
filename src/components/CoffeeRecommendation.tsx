@@ -16,12 +16,20 @@ export const CoffeeRecommendation = ({
   onTryAnother,
 }: CoffeeRecommendationProps) => {
   const matchScore = Math.max(1, 10 - coffee.priority);
+  const matchText = matchScore >= 8 
+    ? "Perfect Match!" 
+    : matchScore >= 6 
+    ? "Great Match" 
+    : "Good Match";
   
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="flex items-center justify-center gap-2 mb-6">
-        <CoffeeIcon className="w-6 h-6 text-primary" />
-        <h2 className="text-3xl font-bold">Your Perfect Match</h2>
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <CoffeeIcon className="w-8 h-8 text-primary" />
+        <div className="text-center">
+          <div className="text-3xl font-bold text-primary">{matchScore}/10</div>
+          <div className="text-lg text-muted-foreground">{matchText}</div>
+        </div>
       </div>
       
       <Card className="p-6 md:p-8 shadow-lg">
@@ -32,19 +40,6 @@ export const CoffeeRecommendation = ({
               alt={coffee.name}
               className="w-full h-full object-cover"
             />
-          </div>
-          
-          <div className="absolute top-4 right-4 bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-lg">
-            <div className="text-xl font-bold text-primary">
-              {matchScore}/10
-            </div>
-            <div className="text-sm text-muted-foreground whitespace-nowrap">
-              {matchScore >= 8 
-                ? "Perfect Match!" 
-                : matchScore >= 6 
-                ? "Great Match" 
-                : "Good Match"}
-            </div>
           </div>
         </div>
         
