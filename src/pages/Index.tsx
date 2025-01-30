@@ -12,8 +12,8 @@ const Index = () => {
   } = useCoffeeRecommendations();
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full flex items-center justify-center p-4">
-      <div className="w-full">
+    <div className="w-full flex items-center justify-center p-4">
+      <div className="w-full max-w-7xl mx-auto">
         {currentCoffee ? (
           <CoffeeRecommendation
             coffee={currentCoffee}
