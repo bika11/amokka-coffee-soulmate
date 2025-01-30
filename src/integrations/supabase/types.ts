@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      amokka_products: {
+        Row: {
+          brewing_methods: string[]
+          created_at: string | null
+          description: string
+          flavor_notes: string[]
+          id: string
+          is_verified: boolean | null
+          last_scraped_at: string | null
+          name: string
+          origin: string | null
+          roast_level: Database["public"]["Enums"]["roast_level"]
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          brewing_methods?: string[]
+          created_at?: string | null
+          description: string
+          flavor_notes?: string[]
+          id?: string
+          is_verified?: boolean | null
+          last_scraped_at?: string | null
+          name: string
+          origin?: string | null
+          roast_level: Database["public"]["Enums"]["roast_level"]
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          brewing_methods?: string[]
+          created_at?: string | null
+          description?: string
+          flavor_notes?: string[]
+          id?: string
+          is_verified?: boolean | null
+          last_scraped_at?: string | null
+          name?: string
+          origin?: string | null
+          roast_level?: Database["public"]["Enums"]["roast_level"]
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       coffee_recommendations: {
         Row: {
           created_at: string | null

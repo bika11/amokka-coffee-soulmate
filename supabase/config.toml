@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.chat-about-coffee]
 verify_jwt = false
+
+[functions.scrape-amokka-product]
+verify_jwt = false
