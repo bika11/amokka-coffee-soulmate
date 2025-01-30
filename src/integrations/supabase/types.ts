@@ -36,6 +36,89 @@ export type Database = {
         }
         Relationships: []
       }
+      coffees: {
+        Row: {
+          created_at: string
+          description: string
+          espresso_compatible: boolean
+          flavor_notes: string[]
+          id: string
+          image_link: string
+          milk_compatible: boolean
+          name: string
+          notes: string | null
+          product_link: string
+          roast_level: Database["public"]["Enums"]["roast_level"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          espresso_compatible?: boolean
+          flavor_notes: string[]
+          id?: string
+          image_link: string
+          milk_compatible?: boolean
+          name: string
+          notes?: string | null
+          product_link: string
+          roast_level: Database["public"]["Enums"]["roast_level"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          espresso_compatible?: boolean
+          flavor_notes?: string[]
+          id?: string
+          image_link?: string
+          milk_compatible?: boolean
+          name?: string
+          notes?: string | null
+          product_link?: string
+          roast_level?: Database["public"]["Enums"]["roast_level"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          recommended_coffee_id: string | null
+          selected_brew_method: string
+          selected_flavors: string[]
+          selected_roast_level: Database["public"]["Enums"]["roast_level"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recommended_coffee_id?: string | null
+          selected_brew_method: string
+          selected_flavors: string[]
+          selected_roast_level: Database["public"]["Enums"]["roast_level"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recommended_coffee_id?: string | null
+          selected_brew_method?: string
+          selected_flavors?: string[]
+          selected_roast_level?: Database["public"]["Enums"]["roast_level"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interactions_recommended_coffee_id_fkey"
+            columns: ["recommended_coffee_id"]
+            isOneToOne: false
+            referencedRelation: "coffees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -44,7 +127,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      roast_level: "light" | "medium-light" | "medium" | "medium-dark" | "dark"
     }
     CompositeTypes: {
       [_ in never]: never
