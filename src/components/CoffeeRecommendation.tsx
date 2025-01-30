@@ -29,9 +29,9 @@ export const CoffeeRecommendation = ({
         <div className="text-lg text-muted-foreground">{matchText}</div>
       </div>
       
-      <Card className="p-6 md:p-8 shadow-lg">
+      <Card className="p-6 md:p-8 shadow-lg min-h-[600px]">
         <div className="relative">
-          <div className="aspect-square w-full max-w-sm mx-auto mb-6 overflow-hidden rounded-xl">
+          <div className="w-full h-[300px] mb-6 overflow-hidden rounded-xl">
             <img
               src={coffee.imageUrl}
               alt={coffee.name}
