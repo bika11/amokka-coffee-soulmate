@@ -81,10 +81,10 @@ const Index = () => {
   const handleTryAnother = (currentCoffee: Coffee): Coffee => {
     return findBestCoffeeMatch(
       COFFEES,
-      currentCoffee.milk_compatible ?? true ? "With milk" : "Straight up",
-      currentCoffee.roastLevel,
-      currentCoffee.flavorNotes,
-      currentCoffee // Exclude current coffee from recommendations
+      currentCoffee.milk_compatible ? "With milk" : "Straight up",
+      parseInt(currentCoffee.roast_level),
+      currentCoffee.flavor_notes,
+      currentCoffee
     );
   };
 
