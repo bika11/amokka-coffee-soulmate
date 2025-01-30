@@ -26,32 +26,62 @@ async function scrapeProductPage(url: string) {
     if (description.toLowerCase().includes('medium-light')) roastLevel = 'medium-light';
     if (description.toLowerCase().includes('medium-dark')) roastLevel = 'medium-dark';
 
-    // Extract flavor notes
+    // Extract flavor notes with expanded common notes
     const flavorNotes = [];
-    const commonNotes = ['chocolate', 'nutty', 'fruity', 'floral', 'citrus', 'caramel', 'berry'];
+    const commonNotes = [
+      'chocolate', 'nutty', 'fruity', 'floral', 'citrus', 'caramel', 'berry',
+      'sweet', 'spicy', 'earthy', 'woody', 'vanilla', 'honey', 'maple',
+      'tobacco', 'wine', 'cocoa', 'almond', 'hazelnut', 'toffee'
+    ];
     for (const note of commonNotes) {
       if (description.toLowerCase().includes(note)) {
         flavorNotes.push(note);
       }
     }
 
-    // Extract brewing methods
+    // Extract brewing methods with expanded methods
     const brewingMethods = [];
-    const commonMethods = ['espresso', 'filter', 'french press', 'pour over', 'aeropress'];
+    const commonMethods = [
+      'espresso', 'filter', 'french press', 'pour over', 'aeropress',
+      'moka pot', 'chemex', 'drip', 'cold brew', 'siphon'
+    ];
     for (const method of commonMethods) {
       if (description.toLowerCase().includes(method)) {
         brewingMethods.push(method);
       }
     }
 
+    // Extract origin information
+    let origin = null;
+    const originPatterns = [
+      /from\s+([A-Za-z\s]+)(?:,|\.|$)/i,
+      /(?:grown|produced)\s+in\s+([A-Za-z\s]+)(?:,|\.|$)/i,
+      /([A-Za-z\s]+)\s+(?:coffee|beans|origin)/i
+    ];
+
+    for (const pattern of originPatterns) {
+      const match = description.match(pattern);
+      if (match && match[1]) {
+        origin = match[1].trim();
+        break;
+      }
+    }
+
+    // Current timestamp for tracking
+    const now = new Date().toISOString();
+
     return {
+      url,
       name,
       description,
       roast_level: roastLevel,
       flavor_notes: flavorNotes,
       brewing_methods: brewingMethods,
-      last_scraped_at: new Date().toISOString(),
-      is_verified: true
+      origin,
+      last_scraped_at: now,
+      is_verified: true,
+      created_at: now,
+      updated_at: now
     };
   } catch (error) {
     console.error('Error scraping product:', error);
