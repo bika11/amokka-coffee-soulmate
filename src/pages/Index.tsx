@@ -12,19 +12,21 @@ const Index = () => {
   } = useCoffeeRecommendations();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      {currentCoffee ? (
-        <CoffeeRecommendation
-          coffee={currentCoffee}
-          onReset={reset}
-          onTryAnother={tryAnother}
-        />
-      ) : (
-        <CoffeeRecommendationForm
-          onGetRecommendation={getRecommendation}
-          isLoading={isLoading}
-        />
-      )}
+    <div className="min-h-[calc(100vh-4rem)] w-full flex items-center justify-center p-4">
+      <div className="w-full">
+        {currentCoffee ? (
+          <CoffeeRecommendation
+            coffee={currentCoffee}
+            onReset={reset}
+            onTryAnother={tryAnother}
+          />
+        ) : (
+          <CoffeeRecommendationForm
+            onGetRecommendation={getRecommendation}
+            isLoading={isLoading}
+          />
+        )}
+      </div>
     </div>
   );
 };
