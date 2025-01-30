@@ -4,6 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@1.35.7";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
 };
 
 serve(async (req) => {
@@ -20,7 +22,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'Invalid or missing Amokka.com URL' }), 
         { 
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: corsHeaders
         }
       );
     }
@@ -66,6 +68,7 @@ serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error('Missing Supabase environment variables');
       throw new Error('Missing Supabase environment variables');
     }
 
@@ -106,18 +109,19 @@ serve(async (req) => {
           brewing_methods: brewingMethods
         }
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { headers: corsHeaders }
     );
 
   } catch (error) {
     console.error('Error in scrape-amokka-product function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: corsHeaders
       }
     );
   }
