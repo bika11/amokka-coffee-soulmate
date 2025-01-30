@@ -8,7 +8,7 @@ import {
   type BrewMethod,
   type FlavorNote,
 } from "@/lib/coffee-data";
-import { findRecommendedCoffee } from "@/utils/coffee-recommendation";
+import { findBestCoffeeMatch } from "@/utils/coffee-scoring";
 import { CoffeeRecommendationForm } from "@/components/CoffeeRecommendationForm";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
 
@@ -62,7 +62,7 @@ const Index = () => {
         variant: "destructive",
       });
       // Fallback to existing recommendation logic
-      const recommendedCoffee = findRecommendedCoffee(
+      const recommendedCoffee = findBestCoffeeMatch(
         COFFEES,
         drinkStyle,
         roastLevel,
@@ -79,12 +79,12 @@ const Index = () => {
   };
 
   const handleTryAnother = (currentCoffee: Coffee): Coffee => {
-    return findRecommendedCoffee(
-      COFFEES.filter((coffee) => coffee.name !== currentCoffee.name),
-      // Use a default value of true if milk_compatible is undefined
+    return findBestCoffeeMatch(
+      COFFEES,
       currentCoffee.milk_compatible ?? true ? "With milk" : "Straight up",
       currentCoffee.roastLevel,
-      currentCoffee.flavorNotes as FlavorNote[]
+      currentCoffee.flavorNotes,
+      currentCoffee // Exclude current coffee from recommendations
     );
   };
 
