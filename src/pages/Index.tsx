@@ -1,66 +1,33 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ProgressBar } from "@/components/ProgressBar";
-import { FlavorSelector } from "@/components/FlavorSelector";
-import { RoastLevelSlider } from "@/components/RoastLevelSlider";
-import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
-import { DrinkStyleSelector } from "@/components/DrinkStyleSelector";
-import { BrewMethodSelector } from "@/components/BrewMethodSelector";
+import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   COFFEES,
-  FLAVOR_NOTES,
   type Coffee,
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
 } from "@/lib/coffee-data";
 import { findRecommendedCoffee } from "@/utils/coffee-recommendation";
+import { CoffeeRecommendationForm } from "@/components/CoffeeRecommendationForm";
+import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
 
 const Index = () => {
-  const [step, setStep] = useState(1);
-  const [drinkStyle, setDrinkStyle] = useState<DrinkStyle | null>(null);
-  const [roastLevel, setRoastLevel] = useState(3);
-  const [selectedFlavors, setSelectedFlavors] = useState<FlavorNote[]>([]);
-  const [brewMethod, setBrewMethod] = useState<BrewMethod | null>(null);
   const [recommendation, setRecommendation] = useState<Coffee | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Auto-proceed when valid selections are made
-  useEffect(() => {
-    if (drinkStyle) {
-      setStep(2);
-    }
-  }, [drinkStyle]);
-
-  useEffect(() => {
-    if (selectedFlavors.length === 3) {
-      setStep(4);
-    }
-  }, [selectedFlavors]);
-
-  useEffect(() => {
-    if (brewMethod) {
-      handleGetRecommendation();
-    }
-  }, [brewMethod]);
-
-  const handleFlavorToggle = (flavor: FlavorNote) => {
-    setSelectedFlavors((prev) =>
-      prev.includes(flavor)
-        ? prev.filter((f) => f !== flavor)
-        : prev.length < 3
-        ? [...prev, flavor]
-        : prev
-    );
-  };
-
-  const handleGetRecommendation = async () => {
-    if (!drinkStyle) return;
-    
+  const handleGetRecommendation = async ({
+    drinkStyle,
+    roastLevel,
+    selectedFlavors,
+    brewMethod,
+  }: {
+    drinkStyle: DrinkStyle;
+    roastLevel: number;
+    selectedFlavors: FlavorNote[];
+    brewMethod: BrewMethod;
+  }) => {
     setIsLoading(true);
     try {
       const preferences = `I like coffee that is ${
@@ -87,7 +54,6 @@ const Index = () => {
       }
 
       setRecommendation(recommendedCoffee);
-      setStep(5);
     } catch (error) {
       console.error("Error getting recommendation:", error);
       toast({
@@ -103,106 +69,38 @@ const Index = () => {
         selectedFlavors
       );
       setRecommendation(recommendedCoffee);
-      setStep(5);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleReset = () => {
-    setStep(1);
-    setDrinkStyle(null);
-    setRoastLevel(3);
-    setSelectedFlavors([]);
-    setBrewMethod(null);
     setRecommendation(null);
   };
 
   const handleTryAnother = (currentCoffee: Coffee): Coffee => {
-    if (!drinkStyle) return currentCoffee;
     return findRecommendedCoffee(
-      COFFEES,
-      drinkStyle,
-      roastLevel,
-      selectedFlavors,
-      currentCoffee
+      COFFEES.filter((coffee) => coffee.name !== currentCoffee.name),
+      currentCoffee.milk_compatible ? "With milk" : "Straight up",
+      currentCoffee.roastLevel,
+      currentCoffee.flavorNotes as FlavorNote[]
     );
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <DrinkStyleSelector
-            selectedStyle={drinkStyle}
-            onStyleSelect={setDrinkStyle}
-          />
-        );
-      case 2:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              Select your preferred roast level
-            </h2>
-            <RoastLevelSlider value={roastLevel} onChange={setRoastLevel} />
-            <div className="flex justify-end">
-              <Button onClick={() => setStep(3)}>Next</Button>
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              Choose 2-3 flavor notes
-            </h2>
-            <p className="text-center text-muted-foreground">
-              Selected: {selectedFlavors.length}/3
-            </p>
-            <FlavorSelector
-              selectedFlavors={selectedFlavors}
-              onFlavorToggle={handleFlavorToggle}
-              availableFlavors={FLAVOR_NOTES}
-            />
-          </div>
-        );
-      case 4:
-        return (
-          <BrewMethodSelector
-            selectedMethod={brewMethod}
-            onMethodSelect={setBrewMethod}
-          />
-        );
-      case 5:
-        return recommendation ? (
-          <CoffeeRecommendation
-            coffee={recommendation}
-            onReset={handleReset}
-            onTryAnother={handleTryAnother}
-          />
-        ) : null;
-      default:
-        return null;
-    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg p-6 space-y-6">
-        <ProgressBar currentStep={step} totalSteps={4} />
-        <div className="min-h-[300px] flex items-center justify-center">
-          {isLoading ? (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-muted-foreground">
-                Getting your perfect match...
-              </p>
-            </div>
-          ) : (
-            renderStep()
-          )}
-        </div>
-      </Card>
+      {recommendation ? (
+        <CoffeeRecommendation
+          coffee={recommendation}
+          onReset={handleReset}
+          onTryAnother={handleTryAnother}
+        />
+      ) : (
+        <CoffeeRecommendationForm
+          onGetRecommendation={handleGetRecommendation}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 };
