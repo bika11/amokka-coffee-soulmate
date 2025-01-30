@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Send } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Message {
   content: string;
@@ -15,12 +16,13 @@ export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleToggleChat = () => {
     if (!isOpen) {
       setMessages([
         {
-          content: "Would you like to learn more about our coffees? I'd be happy to help!",
+          content: "Hi! I'm your coffee expert. I can help you learn about our coffees and find the perfect match for your taste. What would you like to know?",
           isUser: false,
         },
       ]);
@@ -49,13 +51,11 @@ export const ChatBot = () => {
       ]);
     } catch (error) {
       console.error("Error getting response:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          content: "I apologize, but I'm having trouble responding right now. Please try again later.",
-          isUser: false,
-        },
-      ]);
+      toast({
+        title: "Error",
+        description: "I apologize, but I'm having trouble responding right now. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +66,7 @@ export const ChatBot = () => {
       {isOpen ? (
         <Card className="w-80 h-96 flex flex-col">
           <div className="p-3 border-b bg-primary flex justify-between items-center">
-            <span className="font-semibold">Coffee Expert</span>
+            <span className="text-primary-foreground font-semibold">Coffee Expert</span>
             <Button variant="ghost" size="sm" onClick={handleToggleChat}>
               ✕
             </Button>

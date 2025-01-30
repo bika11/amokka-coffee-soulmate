@@ -1,27 +1,13 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { config } from "https://deno.land/x/dotenv/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@1.35.7";
-
-config({ export: true });
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
-
-if (!supabaseUrl || !supabaseKey || !openAIApiKey) {
-  throw new Error('Required environment variables are not set');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,22 +16,31 @@ serve(async (req) => {
     const { message } = await req.json();
     
     if (!message) {
-      return new Response(
-        JSON.stringify({ error: 'No message provided' }), 
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('No message provided');
     }
 
-    console.log('Processing chat message:', message);
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Call OpenAI API to get a coffee-related response
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Fetch relevant product data
+    const { data: products, error: dbError } = await supabase
+      .from('amokka_products')
+      .select('*');
+
+    if (dbError) throw dbError;
+
+    // Create context from product data
+    const context = products
+      ?.map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\n\n`)
+      .join('\n');
+
+    // Call OpenAI with context
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -53,24 +48,22 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a coffee expert who helps customers learn about different coffee varieties, brewing methods, and flavor profiles. Keep responses friendly and informative, focusing on Amokka\'s coffee selection.'
+            content: `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. Only reference products mentioned in the context. If you don't have information about something, be honest about it.\n\nContext:\n${context}`
           },
           { role: 'user', content: message }
         ],
       }),
     });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('OpenAI API error:', data);
+    if (!openAIResponse.ok) {
       throw new Error('Failed to get response from OpenAI');
     }
 
-    const aiResponse = data.choices[0].message.content;
+    const data = await openAIResponse.json();
+    const response = data.choices[0].message.content;
 
-    // Store the interaction in the database
-    const { error: dbError } = await supabase
+    // Store the interaction
+    await supabase
       .from('user_interactions')
       .insert([
         {
@@ -80,15 +73,9 @@ serve(async (req) => {
         }
       ]);
 
-    if (dbError) {
-      console.error('Database error:', dbError);
-    }
-
     return new Response(
-      JSON.stringify({ response: aiResponse }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ response }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
