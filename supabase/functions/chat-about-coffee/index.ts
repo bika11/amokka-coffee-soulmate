@@ -148,12 +148,12 @@ serve(async (req) => {
       throw new Error('No verified products found in the database');
     }
 
-    // Create context from product data
+    // Create context from product data, now including URLs
     const context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\n\n`)
+      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
       .join('\n');
 
-    // Call OpenAI with context
+    // Call OpenAI with enhanced context and instructions
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -165,7 +165,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. Only reference products mentioned in the context. If you don't have information about something, be honest about it. Keep your responses concise and friendly.\n\nAvailable Products:\n${context}`
+            content: `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. When mentioning specific products, always include their URL as a clickable link in markdown format ([Product Name](URL)). Only reference products mentioned in the context. If you don't have information about something, be honest about it. Keep your responses concise and friendly.\n\nAvailable Products:\n${context}`
           },
           { role: 'user', content: message }
         ],
