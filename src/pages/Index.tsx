@@ -7,9 +7,10 @@ import { RoastLevelSlider } from "@/components/RoastLevelSlider";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import {
+  COFFEES,
   FLAVOR_NOTES,
+  type Coffee,
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
@@ -21,10 +22,9 @@ const Index = () => {
   const [roastLevel, setRoastLevel] = useState(3);
   const [selectedFlavors, setSelectedFlavors] = useState<FlavorNote[]>([]);
   const [brewMethod, setBrewMethod] = useState<BrewMethod | null>(null);
-  const [recommendation, setRecommendation] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<Coffee | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { session } = useAuth();
 
   // Auto-proceed when valid selections are made
   useEffect(() => {
@@ -55,63 +55,6 @@ const Index = () => {
     );
   };
 
-  const mapRoastLevelToSupabase = (level: number) => {
-    if (level <= 2) return 'light';
-    if (level === 3) return 'medium-light';
-    if (level === 4) return 'medium';
-    if (level === 5) return 'medium-dark';
-    return 'dark';
-  };
-
-  const findRecommendedCoffee = async (excludeCoffeeId?: string) => {
-    const supabaseRoastLevel = mapRoastLevelToSupabase(roastLevel);
-    
-    let query = supabase
-      .from('coffees')
-      .select('*')
-      .eq('roast_level', supabaseRoastLevel);
-
-    if (excludeCoffeeId) {
-      query = query.neq('id', excludeCoffeeId);
-    }
-
-    const { data: coffees, error } = await query;
-
-    if (error) {
-      console.error('Error fetching coffees:', error);
-      throw error;
-    }
-
-    if (!coffees || coffees.length === 0) {
-      return null;
-    }
-
-    // Score each coffee based on flavor matches and priority
-    const scoredCoffees = coffees.map(coffee => {
-      let score = 0;
-      selectedFlavors.forEach(flavor => {
-        if (coffee.flavor_notes.includes(flavor)) {
-          score += 5;
-        }
-      });
-      
-      // Add priority bonus (higher priority = lower number = better)
-      score += (10 - coffee.priority);
-
-      return { ...coffee, score };
-    });
-
-    // Sort by score (highest first) and then by priority (lowest first)
-    scoredCoffees.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return a.priority - b.priority;
-    });
-
-    return scoredCoffees[0];
-  };
-
   const handleGetRecommendation = async () => {
     setIsLoading(true);
     try {
@@ -121,24 +64,21 @@ const Index = () => {
         ", "
       )} flavors. I brew using ${brewMethod?.toLowerCase()}.`;
 
-      // Store the interaction
-      const { error: interactionError } = await supabase
-        .from('user_interactions')
-        .insert({
-          user_id: session?.user?.id,
-          selected_flavors: selectedFlavors,
-          selected_roast_level: mapRoastLevelToSupabase(roastLevel),
-          selected_brew_method: brewMethod?.toLowerCase() || 'unknown'
-        });
+      const { data, error } = await supabase.functions.invoke(
+        "get-coffee-recommendation",
+        {
+          body: { preferences },
+        }
+      );
 
-      if (interactionError) {
-        console.error('Error storing interaction:', interactionError);
-      }
+      if (error) throw error;
 
-      const recommendedCoffee = await findRecommendedCoffee();
+      const recommendedCoffee = COFFEES.find(
+        (coffee) => coffee.name === data.recommendation
+      );
 
       if (!recommendedCoffee) {
-        throw new Error("No matching coffee found");
+        throw new Error("Coffee not found in database");
       }
 
       setRecommendation(recommendedCoffee);
@@ -150,9 +90,38 @@ const Index = () => {
         description: "Failed to get recommendation. Please try again.",
         variant: "destructive",
       });
+      // Fallback to existing recommendation logic
+      const recommendedCoffee = findRecommendedCoffee();
+      setRecommendation(recommendedCoffee);
+      setStep(5);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const findRecommendedCoffee = (excludeCoffee?: Coffee): Coffee => {
+    const coffeeScores = COFFEES
+      .filter(coffee => !excludeCoffee || coffee.name !== excludeCoffee.name)
+      .map((coffee) => {
+        let score = 0;
+        // Roast level matching (0-10 points)
+        const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
+        score += (5 - roastDiff) * 2;
+
+        // Flavor matching (0-15 points)
+        selectedFlavors.forEach((flavor) => {
+          if (coffee.flavorNotes.includes(flavor)) {
+            score += 5;
+          }
+        });
+
+        // Priority bonus (1-9 points)
+        score += (10 - coffee.priority);
+
+        return { coffee, score };
+      });
+
+    return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
   };
 
   const handleReset = () => {
@@ -164,9 +133,8 @@ const Index = () => {
     setRecommendation(null);
   };
 
-  const handleTryAnother = async (currentCoffee: any) => {
-    const nextCoffee = await findRecommendedCoffee(currentCoffee.id);
-    return nextCoffee || currentCoffee; // Fallback to current coffee if no alternative found
+  const handleTryAnother = (currentCoffee: Coffee): Coffee => {
+    return findRecommendedCoffee(currentCoffee);
   };
 
   const renderStep = () => {
