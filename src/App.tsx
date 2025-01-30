@@ -16,12 +16,14 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col items-center">
-            <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+          <div className="min-h-screen flex flex-col">
+            <main className="flex-1 flex items-center justify-center">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
               <ChatBot />
             </main>
           </div>
