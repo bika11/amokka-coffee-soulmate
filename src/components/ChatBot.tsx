@@ -66,7 +66,7 @@ export const ChatBot = () => {
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {isOpen ? (
-        <Card className="w-80 h-96 flex flex-col">
+        <Card className="w-80 h-96 flex flex-col shadow-lg">
           <ChatHeader onClose={handleToggleChat} />
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
@@ -94,7 +94,7 @@ export const ChatBot = () => {
       ) : (
         <Button
           onClick={handleToggleChat}
-          className="rounded-full h-12 w-12 shadow-lg"
+          className="rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 animate-bounce"
         >
           <MessageSquare className="h-6 w-6" />
         </Button>
