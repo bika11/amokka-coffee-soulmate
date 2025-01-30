@@ -47,6 +47,7 @@ export type Database = {
           milk_compatible: boolean
           name: string
           notes: string | null
+          priority: number
           product_link: string
           roast_level: Database["public"]["Enums"]["roast_level"]
           updated_at: string
@@ -61,6 +62,7 @@ export type Database = {
           milk_compatible?: boolean
           name: string
           notes?: string | null
+          priority: number
           product_link: string
           roast_level: Database["public"]["Enums"]["roast_level"]
           updated_at?: string
@@ -75,6 +77,7 @@ export type Database = {
           milk_compatible?: boolean
           name?: string
           notes?: string | null
+          priority?: number
           product_link?: string
           roast_level?: Database["public"]["Enums"]["roast_level"]
           updated_at?: string

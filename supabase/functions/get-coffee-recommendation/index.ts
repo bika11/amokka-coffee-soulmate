@@ -1,11 +1,5 @@
-/// <reference lib="deno.ns" />
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/mod.ts";
-import { config } from "https://deno.land/x/dotenv/mod.ts";
-
-config({ export: true });
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,59 +7,102 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    if (!openAIApiKey) {
-      console.error('OpenAI API key is not configured');
-      throw new Error('OpenAI API key is not configured');
-    }
-
-    const { message } = await req.json();
+    const { preferences } = await req.json();
     
-    if (!message) {
-      throw new Error('No message provided');
+    if (!preferences) {
+      throw new Error('No preferences provided');
     }
 
-    console.log('Processing chat message:', message);
+    console.log('Received preferences:', preferences);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a coffee expert chatbot for Amokka Coffee. Only provide information that is available on amokka.com. 
-            If asked about something not related to Amokka's products or services, politely redirect the conversation back to Amokka's offerings.
-            Keep responses concise and friendly. If unsure about specific details, recommend visiting amokka.com for the most up-to-date information.`
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ]
-      })
-    });
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API request failed with status ${response.status}`);
+    // Parse preferences
+    const preferenceText = preferences.toLowerCase();
+    let roastLevel = 'medium'; // default
+    if (preferenceText.includes('roast level 1') || preferenceText.includes('roast level 2')) {
+      roastLevel = 'light';
+    } else if (preferenceText.includes('roast level 5') || preferenceText.includes('roast level 6')) {
+      roastLevel = 'dark';
+    } else if (preferenceText.includes('roast level 3')) {
+      roastLevel = 'medium-light';
+    } else if (preferenceText.includes('roast level 4')) {
+      roastLevel = 'medium';
     }
 
-    const data = await response.json().catch(() => {
-      throw new Error('Failed to parse JSON response from OpenAI API');
+    // Extract flavor preferences
+    const flavorKeywords = ['chocolate', 'dried fruits', 'nuts', 'roasted', 'spices', 'fruity', 'sweet', 'floral'];
+    const preferredFlavors = flavorKeywords.filter(flavor => preferenceText.includes(flavor));
+
+    console.log('Parsed preferences:', { roastLevel, preferredFlavors });
+
+    // Query the database for matching coffees
+    const { data: coffees, error: dbError } = await supabase
+      .from('coffees')
+      .select('*')
+      .eq('roast_level', roastLevel);
+
+    if (dbError) {
+      throw dbError;
+    }
+
+    if (!coffees || coffees.length === 0) {
+      throw new Error('No matching coffees found');
+    }
+
+    console.log('Found coffees:', coffees);
+
+    // Score each coffee based on flavor matches
+    const scoredCoffees = coffees.map(coffee => {
+      let score = 0;
+      preferredFlavors.forEach(flavor => {
+        if (coffee.flavor_notes.includes(flavor)) {
+          score += 1;
+        }
+      });
+      return { ...coffee, score };
     });
 
-    return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Sort by score and then by priority
+    scoredCoffees.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return a.priority - b.priority;
+    });
+
+    console.log('Recommended coffee:', scoredCoffees[0].name);
+
+    return new Response(
+      JSON.stringify({ recommendation: scoredCoffees[0].name }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
   } catch (error) {
-    return new Response(error.message, { status: 400, headers: corsHeaders });
+    console.error('Error:', error.message);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 400,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
 });
-
-console.log("Listening on http://localhost:8000/");
