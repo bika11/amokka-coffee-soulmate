@@ -86,8 +86,8 @@ const Index = () => {
     return findBestCoffeeMatch(
       remainingCoffees,
       currentCoffee.milk_compatible ? "With milk" : "Straight up",
-      currentCoffee.roast_level,
-      currentCoffee.flavor_notes,
+      currentCoffee.roastLevel,
+      currentCoffee.flavorNotes,
       currentCoffee // Pass current coffee to exclude it
     );
   };

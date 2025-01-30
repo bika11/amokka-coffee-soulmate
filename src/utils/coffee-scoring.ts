@@ -20,6 +20,8 @@ const calculateFlavorScore = (
   coffeeFlavorNotes: FlavorNote[],
   userPreferredFlavors: FlavorNote[]
 ): number => {
+  if (!coffeeFlavorNotes || !userPreferredFlavors) return 0;
+  
   return userPreferredFlavors.reduce(
     (score, flavor) => score + (coffeeFlavorNotes.includes(flavor) ? 5 : 0),
     0
