@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { FlavorSelector } from "@/components/FlavorSelector";
-import { RoastLevelSlider } from "@/components/RoastLevelSlider";
-import { DrinkStyleSelector } from "@/components/DrinkStyleSelector";
-import { BrewMethodSelector } from "@/components/BrewMethodSelector";
 import { FormProgress } from "./FormProgress";
+import { DrinkStyleStep } from "./steps/DrinkStyleStep";
+import { RoastLevelStep } from "./steps/RoastLevelStep";
+import { FlavorStep } from "./steps/FlavorStep";
+import { BrewMethodStep } from "./steps/BrewMethodStep";
 import {
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
-  FLAVOR_NOTES,
 } from "@/lib/coffee-data";
 
 interface CoffeeRecommendationFormProps {
@@ -76,42 +74,29 @@ export const CoffeeRecommendationForm = ({
     switch (step) {
       case 1:
         return (
-          <DrinkStyleSelector
+          <DrinkStyleStep
             selectedStyle={drinkStyle}
             onStyleSelect={setDrinkStyle}
           />
         );
       case 2:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              Select your preferred roast level
-            </h2>
-            <RoastLevelSlider value={roastLevel} onChange={setRoastLevel} />
-            <div className="flex justify-end">
-              <Button onClick={() => setStep(3)}>Next</Button>
-            </div>
-          </div>
+          <RoastLevelStep
+            value={roastLevel}
+            onChange={setRoastLevel}
+            onNext={() => setStep(3)}
+          />
         );
       case 3:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              Choose 2-3 flavor notes
-            </h2>
-            <p className="text-center text-muted-foreground">
-              Selected: {selectedFlavors.length}/3
-            </p>
-            <FlavorSelector
-              selectedFlavors={selectedFlavors}
-              onFlavorToggle={handleFlavorToggle}
-              availableFlavors={FLAVOR_NOTES}
-            />
-          </div>
+          <FlavorStep
+            selectedFlavors={selectedFlavors}
+            onFlavorToggle={handleFlavorToggle}
+          />
         );
       case 4:
         return (
-          <BrewMethodSelector
+          <BrewMethodStep
             selectedMethod={brewMethod}
             onMethodSelect={setBrewMethod}
           />
