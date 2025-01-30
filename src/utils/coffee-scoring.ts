@@ -69,8 +69,14 @@ export const findBestCoffeeMatches = (
     };
   });
 
-  // Sort coffees by score in descending order
-  const sortedCoffees = coffeeScores.sort((a, b) => b.totalScore - a.totalScore);
+  // Sort coffees by score in descending order AND by priority in ascending order for equal scores
+  const sortedCoffees = coffeeScores.sort((a, b) => {
+    if (b.totalScore !== a.totalScore) {
+      return b.totalScore - a.totalScore;
+    }
+    // If scores are equal, sort by priority (lower priority first)
+    return a.coffee.priority - b.coffee.priority;
+  });
 
   // Log scoring details for debugging
   console.log(
@@ -78,6 +84,7 @@ export const findBestCoffeeMatches = (
     sortedCoffees.map(({ coffee, totalScore, details }) => ({
       name: coffee.name,
       totalScore,
+      priority: coffee.priority,
       ...details,
     }))
   );

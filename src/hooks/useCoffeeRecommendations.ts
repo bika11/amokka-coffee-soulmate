@@ -57,8 +57,11 @@ export const useCoffeeRecommendations = () => {
         selectedFlavors
       );
 
+      // Sort recommendations by priority (lower is better)
       const finalRecommendations = recommendedCoffee
-        ? [recommendedCoffee, ...topMatches.filter(c => c.name !== recommendedCoffee.name)].slice(0, 2)
+        ? [recommendedCoffee, ...topMatches.filter(c => c.name !== recommendedCoffee.name)]
+            .slice(0, 2)
+            .sort((a, b) => a.priority - b.priority)
         : topMatches.slice(0, 2);
 
       setRecommendations(finalRecommendations);
