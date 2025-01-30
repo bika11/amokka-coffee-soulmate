@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Coffee } from "@/lib/coffee-data";
 import { ExternalLink, RefreshCw, Coffee as CoffeeIcon, Star } from "lucide-react";
-import { useState } from "react";
-import { ChatBot } from "./ChatBot";
 import { Card } from "@/components/ui/card";
+import { ChatBot } from "./ChatBot";
 
 interface CoffeeRecommendationProps {
   coffee: Coffee;
   onReset: () => void;
-  onTryAnother: (currentCoffee: Coffee) => Coffee;
+  onTryAnother: () => Coffee;
 }
 
 export const CoffeeRecommendation = ({
@@ -16,13 +15,6 @@ export const CoffeeRecommendation = ({
   onReset,
   onTryAnother,
 }: CoffeeRecommendationProps) => {
-  const [currentCoffee, setCurrentCoffee] = useState<Coffee>(coffee);
-
-  const handleTryAnother = () => {
-    const nextCoffee = onTryAnother(currentCoffee);
-    setCurrentCoffee(nextCoffee);
-  };
-
   return (
     <div className="space-y-6 text-center max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-center justify-center gap-2 mb-8">
@@ -34,8 +26,8 @@ export const CoffeeRecommendation = ({
         <div className="relative">
           <div className="w-64 h-64 mx-auto mb-6 overflow-hidden rounded-xl">
             <img
-              src={currentCoffee.imageUrl}
-              alt={currentCoffee.name}
+              src={coffee.imageUrl}
+              alt={coffee.name}
               className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
             />
           </div>
@@ -44,13 +36,13 @@ export const CoffeeRecommendation = ({
           </div>
         </div>
         
-        <h3 className="text-2xl font-semibold mb-4">{currentCoffee.name}</h3>
+        <h3 className="text-2xl font-semibold mb-4">{coffee.name}</h3>
         <p className="text-muted-foreground mb-6 leading-relaxed">
-          {currentCoffee.description}
+          {coffee.description}
         </p>
         
         <div className="flex flex-wrap gap-2 justify-center mb-8">
-          {currentCoffee.flavorNotes.map((note) => (
+          {coffee.flavorNotes.map((note) => (
             <span
               key={note}
               className="px-4 py-2 bg-primary/10 text-primary-foreground rounded-full text-sm font-medium hover:bg-primary/20 transition-colors"
@@ -66,7 +58,7 @@ export const CoffeeRecommendation = ({
             className="w-full max-w-xs group hover:scale-105 transition-transform duration-200"
           >
             <a
-              href={currentCoffee.url}
+              href={coffee.url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center space-x-2"
@@ -77,7 +69,7 @@ export const CoffeeRecommendation = ({
           </Button>
           
           <Button
-            onClick={handleTryAnother}
+            onClick={() => onTryAnother()}
             variant="secondary"
             className="w-full max-w-xs group hover:bg-secondary/80"
           >

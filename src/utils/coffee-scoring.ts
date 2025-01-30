@@ -42,20 +42,14 @@ const calculatePriorityBonus = (coffeePriority: number): number => {
   return 10 - coffeePriority;
 };
 
-export const findBestCoffeeMatch = (
+export const findBestCoffeeMatches = (
   availableCoffees: Coffee[],
   userDrinkStyle: DrinkStyle,
   userRoastLevel: number,
   userPreferredFlavors: FlavorNote[],
-  excludeCoffee?: Coffee
-): Coffee => {
-  // Filter out excluded coffee if provided
-  const eligibleCoffees = excludeCoffee
-    ? availableCoffees.filter((coffee) => coffee.name !== excludeCoffee.name)
-    : availableCoffees;
-
+): Coffee[] => {
   // Calculate scores for each coffee
-  const coffeeScores: CoffeeScore[] = eligibleCoffees.map((coffee) => {
+  const coffeeScores: CoffeeScore[] = availableCoffees.map((coffee) => {
     const roastScore = calculateRoastScore(coffee.roastLevel, userRoastLevel);
     const flavorScore = calculateFlavorScore(coffee.flavorNotes, userPreferredFlavors);
     const drinkStyleScore = calculateDrinkStyleScore(coffee, userDrinkStyle);
@@ -88,6 +82,6 @@ export const findBestCoffeeMatch = (
     }))
   );
 
-  // When trying another coffee, return the second-best match
-  return sortedCoffees[1]?.coffee || sortedCoffees[0].coffee;
+  // Return top 2 matches
+  return sortedCoffees.slice(0, 2).map(score => score.coffee);
 };
