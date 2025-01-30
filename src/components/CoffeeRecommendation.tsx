@@ -34,7 +34,7 @@ export const CoffeeRecommendation = ({
         <div className="relative">
           <div className="w-64 h-64 mx-auto mb-6 overflow-hidden rounded-xl">
             <img
-              src={currentCoffee.imageLink}
+              src={currentCoffee.imageUrl}
               alt={currentCoffee.name}
               className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
             />
@@ -66,7 +66,7 @@ export const CoffeeRecommendation = ({
             className="w-full max-w-xs group hover:scale-105 transition-transform duration-200"
           >
             <a
-              href={currentCoffee.productLink}
+              href={currentCoffee.url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center space-x-2"
