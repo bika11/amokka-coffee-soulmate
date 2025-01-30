@@ -1,13 +1,3 @@
-import dotenv from 'dotenv';
-
-// Load environment variables from a .env file into process.env
-dotenv.config();
-
-// Example usage of an environment variable
-const myEnvVar = process.env.MY_ENV_VAR;
-
-console.log(`My environment variable: ${myEnvVar}`);
-
 export type Json =
   | string
   | number
