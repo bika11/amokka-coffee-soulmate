@@ -11,46 +11,118 @@ export type Database = {
     Tables: {
       amokka_products: {
         Row: {
-          brewing_methods: string[]
+          acidity: string | null
+          aftertaste: string | null
+          altitude: string | null
+          aroma: string | null
+          background: string | null
+          batch_size: string | null
+          body: string | null
+          brewing_methods: string[] | null
+          country: string | null
           created_at: string | null
-          description: string
-          flavor_notes: string[]
+          crop_year: string | null
+          description: string | null
+          end_temperature: string | null
+          flavor_appreciation: string | null
+          flavor_notes: string[] | null
+          general_information: string | null
           id: string
           is_verified: boolean | null
           last_scraped_at: string | null
+          milk_recommendation: string | null
           name: string
           origin: string | null
-          roast_level: Database["public"]["Enums"]["roast_level"]
+          origin_preference: string | null
+          overall_description: string | null
+          processing_method: string | null
+          recommended_methods: string[] | null
+          region: string | null
+          roast_level: Database["public"]["Enums"]["roast_level"] | null
+          roaster: string | null
+          roasting_time: string | null
+          single_origin_blend: string | null
+          source: string | null
+          sweetness: string | null
           updated_at: string | null
           url: string
+          variety: string | null
         }
         Insert: {
-          brewing_methods?: string[]
+          acidity?: string | null
+          aftertaste?: string | null
+          altitude?: string | null
+          aroma?: string | null
+          background?: string | null
+          batch_size?: string | null
+          body?: string | null
+          brewing_methods?: string[] | null
+          country?: string | null
           created_at?: string | null
-          description: string
-          flavor_notes?: string[]
+          crop_year?: string | null
+          description?: string | null
+          end_temperature?: string | null
+          flavor_appreciation?: string | null
+          flavor_notes?: string[] | null
+          general_information?: string | null
           id?: string
           is_verified?: boolean | null
           last_scraped_at?: string | null
+          milk_recommendation?: string | null
           name: string
           origin?: string | null
-          roast_level: Database["public"]["Enums"]["roast_level"]
+          origin_preference?: string | null
+          overall_description?: string | null
+          processing_method?: string | null
+          recommended_methods?: string[] | null
+          region?: string | null
+          roast_level?: Database["public"]["Enums"]["roast_level"] | null
+          roaster?: string | null
+          roasting_time?: string | null
+          single_origin_blend?: string | null
+          source?: string | null
+          sweetness?: string | null
           updated_at?: string | null
           url: string
+          variety?: string | null
         }
         Update: {
-          brewing_methods?: string[]
+          acidity?: string | null
+          aftertaste?: string | null
+          altitude?: string | null
+          aroma?: string | null
+          background?: string | null
+          batch_size?: string | null
+          body?: string | null
+          brewing_methods?: string[] | null
+          country?: string | null
           created_at?: string | null
-          description?: string
-          flavor_notes?: string[]
+          crop_year?: string | null
+          description?: string | null
+          end_temperature?: string | null
+          flavor_appreciation?: string | null
+          flavor_notes?: string[] | null
+          general_information?: string | null
           id?: string
           is_verified?: boolean | null
           last_scraped_at?: string | null
+          milk_recommendation?: string | null
           name?: string
           origin?: string | null
-          roast_level?: Database["public"]["Enums"]["roast_level"]
+          origin_preference?: string | null
+          overall_description?: string | null
+          processing_method?: string | null
+          recommended_methods?: string[] | null
+          region?: string | null
+          roast_level?: Database["public"]["Enums"]["roast_level"] | null
+          roaster?: string | null
+          roasting_time?: string | null
+          single_origin_blend?: string | null
+          source?: string | null
+          sweetness?: string | null
           updated_at?: string | null
           url?: string
+          variety?: string | null
         }
         Relationships: []
       }
