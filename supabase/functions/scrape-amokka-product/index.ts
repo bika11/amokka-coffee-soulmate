@@ -83,10 +83,15 @@ serve(async (req) => {
     // Extract origin if available
     const origin = description.match(/(?:from|origin:?\s*)([\w\s,]+)(?=\.|\n|$)/i)?.[1]?.trim() || null;
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase client with service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error('Missing required environment variables');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     console.log('Storing product data:', { name, roastLevel, flavorNotes, brewingMethods });
 
