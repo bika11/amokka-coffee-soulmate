@@ -7,6 +7,58 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function scrapeProductPage(url: string) {
+  console.log('Fetching product data from:', url);
+  
+  try {
+    const response = await fetch(url);
+    const html = await response.text();
+
+    // Basic parsing of product data using string manipulation
+    const name = html.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1]?.trim() || 'Unknown Product';
+    const description = html.match(/<div[^>]*class="[^"]*product-description[^"]*"[^>]*>([\s\S]*?)<\/div>/)?.[1]?.trim() 
+      ?.replace(/<[^>]+>/g, '') || 'No description available';
+    
+    // Extract roast level from description or default to medium
+    let roastLevel = 'medium';
+    if (description.toLowerCase().includes('light roast')) roastLevel = 'light';
+    if (description.toLowerCase().includes('dark roast')) roastLevel = 'dark';
+    if (description.toLowerCase().includes('medium-light')) roastLevel = 'medium-light';
+    if (description.toLowerCase().includes('medium-dark')) roastLevel = 'medium-dark';
+
+    // Extract flavor notes
+    const flavorNotes = [];
+    const commonNotes = ['chocolate', 'nutty', 'fruity', 'floral', 'citrus', 'caramel', 'berry'];
+    for (const note of commonNotes) {
+      if (description.toLowerCase().includes(note)) {
+        flavorNotes.push(note);
+      }
+    }
+
+    // Extract brewing methods
+    const brewingMethods = [];
+    const commonMethods = ['espresso', 'filter', 'french press', 'pour over', 'aeropress'];
+    for (const method of commonMethods) {
+      if (description.toLowerCase().includes(method)) {
+        brewingMethods.push(method);
+      }
+    }
+
+    return {
+      name,
+      description,
+      roast_level: roastLevel,
+      flavor_notes: flavorNotes,
+      brewing_methods: brewingMethods,
+      last_scraped_at: new Date().toISOString(),
+      is_verified: true
+    };
+  } catch (error) {
+    console.error('Error scraping product:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -24,13 +76,43 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch relevant product data
+    // Fetch all products first
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
       .select('*')
       .eq('is_verified', true);
 
     if (dbError) throw dbError;
+
+    // If a product is mentioned but not verified, try to scrape it
+    const productNames = products?.map(p => p.name.toLowerCase()) || [];
+    const messageWords = message.toLowerCase().split(' ');
+    
+    for (const product of products || []) {
+      if (messageWords.includes(product.name.toLowerCase()) && !product.is_verified) {
+        console.log(`Product ${product.name} mentioned but not verified, attempting to scrape`);
+        const scrapedData = await scrapeProductPage(product.url);
+        
+        if (scrapedData) {
+          const { data: updatedProduct, error: updateError } = await supabase
+            .from('amokka_products')
+            .update(scrapedData)
+            .eq('id', product.id)
+            .select()
+            .single();
+
+          if (!updateError && updatedProduct) {
+            console.log(`Successfully updated product: ${product.name}`);
+            if (products) {
+              const index = products.findIndex(p => p.id === product.id);
+              if (index !== -1) {
+                products[index] = updatedProduct;
+              }
+            }
+          }
+        }
+      }
+    }
 
     if (!products || products.length === 0) {
       throw new Error('No verified products found in the database');
