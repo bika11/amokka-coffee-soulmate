@@ -35,7 +35,7 @@ export const CoffeeRecommendation = ({
             <img
               src={coffee.imageUrl}
               alt={coffee.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain bg-gray-50"
             />
           </div>
         </div>
