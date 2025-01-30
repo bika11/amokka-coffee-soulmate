@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FormProgress } from "./FormProgress";
-import { DrinkStyleStep } from "./steps/DrinkStyleStep";
-import { RoastLevelStep } from "./steps/RoastLevelStep";
-import { FlavorStep } from "./steps/FlavorStep";
-import { BrewMethodStep } from "./steps/BrewMethodStep";
+import { ProgressBar } from "@/components/ProgressBar";
+import { FlavorSelector } from "@/components/FlavorSelector";
+import { RoastLevelSlider } from "@/components/RoastLevelSlider";
+import { DrinkStyleSelector } from "@/components/DrinkStyleSelector";
+import { BrewMethodSelector } from "@/components/BrewMethodSelector";
 import {
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
+  type Coffee,
+  FLAVOR_NOTES,
 } from "@/lib/coffee-data";
 
 interface CoffeeRecommendationFormProps {
@@ -74,29 +77,42 @@ export const CoffeeRecommendationForm = ({
     switch (step) {
       case 1:
         return (
-          <DrinkStyleStep
+          <DrinkStyleSelector
             selectedStyle={drinkStyle}
             onStyleSelect={setDrinkStyle}
           />
         );
       case 2:
         return (
-          <RoastLevelStep
-            value={roastLevel}
-            onChange={setRoastLevel}
-            onNext={() => setStep(3)}
-          />
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-center">
+              Select your preferred roast level
+            </h2>
+            <RoastLevelSlider value={roastLevel} onChange={setRoastLevel} />
+            <div className="flex justify-end">
+              <Button onClick={() => setStep(3)}>Next</Button>
+            </div>
+          </div>
         );
       case 3:
         return (
-          <FlavorStep
-            selectedFlavors={selectedFlavors}
-            onFlavorToggle={handleFlavorToggle}
-          />
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-center">
+              Choose 2-3 flavor notes
+            </h2>
+            <p className="text-center text-muted-foreground">
+              Selected: {selectedFlavors.length}/3
+            </p>
+            <FlavorSelector
+              selectedFlavors={selectedFlavors}
+              onFlavorToggle={handleFlavorToggle}
+              availableFlavors={FLAVOR_NOTES}
+            />
+          </div>
         );
       case 4:
         return (
-          <BrewMethodStep
+          <BrewMethodSelector
             selectedMethod={brewMethod}
             onMethodSelect={setBrewMethod}
           />
@@ -108,9 +124,18 @@ export const CoffeeRecommendationForm = ({
 
   return (
     <Card className="w-full max-w-lg p-6 space-y-6">
-      <FormProgress currentStep={step} totalSteps={4} isLoading={isLoading} />
+      <ProgressBar currentStep={step} totalSteps={4} />
       <div className="min-h-[300px] flex items-center justify-center">
-        {!isLoading && renderStep()}
+        {isLoading ? (
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground">
+              Getting your perfect match...
+            </p>
+          </div>
+        ) : (
+          renderStep()
+        )}
       </div>
     </Card>
   );
