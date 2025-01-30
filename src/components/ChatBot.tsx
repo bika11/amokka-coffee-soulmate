@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ChatMessage } from "./chat/ChatMessage";
 import { ChatInput } from "./chat/ChatInput";
 import { ChatHeader } from "./chat/ChatHeader";
+import { ChatButton } from "./chat/ChatButton";
+import { LoadingDots } from "./chat/LoadingDots";
 
 interface Message {
   content: string;
@@ -81,17 +81,7 @@ export const ChatBot = () => {
             {messages.map((message, index) => (
               <ChatMessage key={index} {...message} />
             ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-muted p-3 rounded-lg">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-100" />
-                    <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-200" />
-                  </div>
-                </div>
-              </div>
-            )}
+            {isLoading && <LoadingDots />}
           </div>
           <ChatInput
             input={input}
@@ -101,14 +91,7 @@ export const ChatBot = () => {
           />
         </Card>
       ) : (
-        <Button
-          onClick={handleToggleChat}
-          className={`rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 ${
-            isBouncing ? "animate-bounce" : ""
-          }`}
-        >
-          <MessageSquare className="h-6 w-6" />
-        </Button>
+        <ChatButton onClick={handleToggleChat} isBouncing={isBouncing} />
       )}
     </div>
   );
