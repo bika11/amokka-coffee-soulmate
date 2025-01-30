@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Coffee } from "@/lib/coffee-data";
-import { ExternalLink, RefreshCw, Coffee as CoffeeIcon, Star } from "lucide-react";
+import { ExternalLink, RefreshCw, Coffee as CoffeeIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ChatBot } from "./ChatBot";
 
@@ -15,6 +15,10 @@ export const CoffeeRecommendation = ({
   onReset,
   onTryAnother,
 }: CoffeeRecommendationProps) => {
+  // Calculate a match score between 1-10 based on coffee priority
+  // Lower priority means better match (1 is best, 9 is worst)
+  const matchScore = Math.max(1, 10 - coffee.priority);
+  
   return (
     <div className="space-y-6 text-center max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-center justify-center gap-2 mb-8">
@@ -31,8 +35,17 @@ export const CoffeeRecommendation = ({
               className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
             />
           </div>
-          <div className="absolute top-2 right-2">
-            <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+          <div className="absolute top-2 right-2 bg-primary/10 px-3 py-1 rounded-full">
+            <div className="text-lg font-bold text-primary">
+              {matchScore}/10
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {matchScore >= 8 
+                ? "Perfect Match!" 
+                : matchScore >= 6 
+                ? "Great Match" 
+                : "Good Match"}
+            </div>
           </div>
         </div>
         
