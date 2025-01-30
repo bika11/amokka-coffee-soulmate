@@ -15,15 +15,33 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
     const { message } = await req.json();
     
     if (!message) {
       throw new Error('No message provided');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify the JWT token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    
+    if (authError || !user) {
+      throw new Error('Invalid authorization token');
+    }
 
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
@@ -61,12 +79,14 @@ serve(async (req) => {
 
     const response = await getChatResponse(context, message);
 
+    // Store the recommendation with the user's ID
     await supabase
       .from('coffee_recommendations')
       .insert([
         {
           input_preferences: message,
           recommendation: response,
+          user_id: user.id
         }
       ]);
 
@@ -80,10 +100,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'If you see this error, please make sure there are verified products in the database.'
+        details: 'An error occurred while processing your request.'
       }),
       { 
-        status: 500,
+        status: error.message.includes('authorization') ? 401 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
