@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Coffee } from "@/lib/coffee-data";
 import { ExternalLink, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { ChatBot } from "./ChatBot";
 
 interface CoffeeRecommendationProps {
-  coffee: Coffee;
+  coffee: any;
   onReset: () => void;
-  onTryAnother: (currentCoffee: Coffee) => Coffee;
+  onTryAnother: (currentCoffee: any) => Promise<any>;
 }
 
 export const CoffeeRecommendation = ({
@@ -15,10 +14,10 @@ export const CoffeeRecommendation = ({
   onReset,
   onTryAnother,
 }: CoffeeRecommendationProps) => {
-  const [currentCoffee, setCurrentCoffee] = useState<Coffee>(coffee);
+  const [currentCoffee, setCurrentCoffee] = useState(coffee);
 
-  const handleTryAnother = () => {
-    const nextCoffee = onTryAnother(currentCoffee);
+  const handleTryAnother = async () => {
+    const nextCoffee = await onTryAnother(currentCoffee);
     setCurrentCoffee(nextCoffee);
   };
 
@@ -28,7 +27,7 @@ export const CoffeeRecommendation = ({
       <div className="bg-secondary p-6 rounded-lg space-y-4">
         <div className="w-48 h-48 mx-auto mb-4 overflow-hidden rounded-lg">
           <img
-            src={currentCoffee.imageUrl}
+            src={currentCoffee.image_link}
             alt={currentCoffee.name}
             className="w-full h-full object-cover transform transition-transform duration-300 hover:scale-105"
           />
@@ -36,7 +35,7 @@ export const CoffeeRecommendation = ({
         <h3 className="text-xl font-semibold">{currentCoffee.name}</h3>
         <p className="text-muted-foreground">{currentCoffee.description}</p>
         <div className="flex flex-wrap gap-2 justify-center">
-          {currentCoffee.flavorNotes.map((note) => (
+          {currentCoffee.flavor_notes.map((note: string) => (
             <span
               key={note}
               className="px-3 py-1 bg-background rounded-full text-sm"
@@ -48,7 +47,7 @@ export const CoffeeRecommendation = ({
         <div className="pt-4 flex flex-col gap-3 items-center">
           <Button asChild className="w-full max-w-xs">
             <a
-              href={currentCoffee.url}
+              href={currentCoffee.product_link}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center space-x-2"
