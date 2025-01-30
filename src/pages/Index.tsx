@@ -105,29 +105,46 @@ const Index = () => {
       .map((coffee) => {
         let score = 0;
         
-        // Roast level matching (0-30 points) - Increased weight
+        // Roast level matching (0-30 points) - Highest weight
         const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
-        score += (5 - roastDiff) * 6; // Multiplied by 6 instead of 2 to give more weight
+        const roastScore = Math.max(0, 30 - (roastDiff * 6)); // Each level difference reduces score by 6
+        score += roastScore;
 
         // Flavor matching (0-15 points) - Medium weight
-        selectedFlavors.forEach((flavor) => {
-          if (coffee.flavorNotes.includes(flavor)) {
-            score += 5;
-          }
-        });
+        const flavorScore = selectedFlavors.reduce((acc, flavor) => {
+          return acc + (coffee.flavorNotes.includes(flavor) ? 5 : 0);
+        }, 0);
+        score += flavorScore;
 
-        // Drink style compatibility (0-5 points) - Lower weight
+        // Drink style compatibility (0-5 points) - Lowest weight
         if (drinkStyle === "With milk" && coffee.roastLevel >= 4) {
-          score += 5; // Darker roasts work better with milk
+          score += 5;
         } else if (drinkStyle === "Straight up" && coffee.roastLevel <= 3) {
-          score += 5; // Lighter roasts work better straight up
+          score += 5;
         }
 
-        // Priority bonus (1-9 points) - Kept as is for tiebreaking
+        // Priority bonus (1-9 points) - Tiebreaker
         score += (10 - coffee.priority);
 
-        return { coffee, score };
+        return { 
+          coffee, 
+          score,
+          // Add debug information
+          debug: {
+            roastScore,
+            flavorScore,
+            drinkStyleScore: score - roastScore - flavorScore - (10 - coffee.priority),
+            priorityBonus: 10 - coffee.priority
+          }
+        };
       });
+
+    // Log scoring details for debugging
+    console.log('Coffee Scores:', coffeeScores.map(({ coffee, score, debug }) => ({
+      name: coffee.name,
+      totalScore: score,
+      ...debug
+    })));
 
     return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
   };
