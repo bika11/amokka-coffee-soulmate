@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import ReactMarkdown from 'react-markdown';
+import { ChatMessage } from "./chat/ChatMessage";
+import { ChatInput } from "./chat/ChatInput";
+import { ChatHeader } from "./chat/ChatHeader";
 
 interface Message {
   content: string;
@@ -66,47 +67,10 @@ export const ChatBot = () => {
     <div className="fixed bottom-4 right-4 z-50">
       {isOpen ? (
         <Card className="w-80 h-96 flex flex-col">
-          <div className="p-3 border-b bg-primary flex justify-between items-center">
-            <span className="text-primary-foreground font-semibold">Coffee Expert</span>
-            <Button variant="ghost" size="sm" onClick={handleToggleChat}>
-              ✕
-            </Button>
-          </div>
+          <ChatHeader onClose={handleToggleChat} />
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${
-                  message.isUser ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    message.isUser
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  {message.isUser ? (
-                    message.content
-                  ) : (
-                    <ReactMarkdown
-                      components={{
-                        a: ({ node, ...props }) => (
-                          <a
-                            {...props}
-                            className="text-blue-500 hover:underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          />
-                        ),
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
-                  )}
-                </div>
-              </div>
+              <ChatMessage key={index} {...message} />
             ))}
             {isLoading && (
               <div className="flex justify-start">
@@ -120,29 +84,12 @@ export const ChatBot = () => {
               </div>
             )}
           </div>
-          <div className="p-3 border-t">
-            <div className="flex gap-2">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about our coffees..."
-                className="min-h-0 h-10 resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <Button
-                size="icon"
-                onClick={handleSendMessage}
-                disabled={isLoading || !input.trim()}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <ChatInput
+            input={input}
+            setInput={setInput}
+            handleSendMessage={handleSendMessage}
+            isLoading={isLoading}
+          />
         </Card>
       ) : (
         <Button
