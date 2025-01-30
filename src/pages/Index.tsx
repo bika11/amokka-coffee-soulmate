@@ -7,6 +7,7 @@ import { RoastLevelSlider } from "@/components/RoastLevelSlider";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   FLAVOR_NOTES,
   type DrinkStyle,
@@ -23,6 +24,7 @@ const Index = () => {
   const [recommendation, setRecommendation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { session } = useAuth();
 
   // Auto-proceed when valid selections are made
   useEffect(() => {
@@ -123,6 +125,7 @@ const Index = () => {
       const { error: interactionError } = await supabase
         .from('user_interactions')
         .insert({
+          user_id: session?.user?.id,
           selected_flavors: selectedFlavors,
           selected_roast_level: mapRoastLevelToSupabase(roastLevel),
           selected_brew_method: brewMethod?.toLowerCase() || 'unknown'
