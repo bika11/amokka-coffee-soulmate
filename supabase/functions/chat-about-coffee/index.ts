@@ -4,34 +4,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { scrapeProductPage } from "./product-scraper.ts";
 import { getChatResponse } from "./openai-client.ts";
 
-// Rate limiting implementation
-const ipRequests = new Map<string, { count: number; timestamp: number }>();
-const WINDOW_MS = 60000; // 1 minute
-const MAX_REQUESTS = 5; // 5 requests per minute
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const requestData = ipRequests.get(ip);
-
-  if (!requestData) {
-    ipRequests.set(ip, { count: 1, timestamp: now });
-    return true;
-  }
-
-  if (now - requestData.timestamp > WINDOW_MS) {
-    // Reset if window has passed
-    ipRequests.set(ip, { count: 1, timestamp: now });
-    return true;
-  }
-
-  if (requestData.count >= MAX_REQUESTS) {
-    return false;
-  }
-
-  requestData.count++;
-  return true;
-}
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -43,23 +15,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get client IP
-    const clientIP = req.headers.get("x-forwarded-for") || "unknown";
-    
-    // Check rate limit
-    if (!checkRateLimit(clientIP)) {
-      return new Response(
-        JSON.stringify({ 
-          error: "Too many requests",
-          details: "Please wait a minute before trying again"
-        }),
-        { 
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
