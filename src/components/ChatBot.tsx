@@ -41,25 +41,8 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        toast({
-          title: "Authentication Required",
-          description: "Please sign in to use the chat feature.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
         body: { message: userMessage },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
 
       if (error) throw error;

@@ -60,12 +60,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-
     const { message } = await req.json();
     
     if (!message) {
@@ -81,38 +75,12 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify the JWT token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    
-    if (authError || !user) {
-      throw new Error('Invalid authorization token');
-    }
-
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
       .select('*')
       .eq('is_verified', true);
 
     if (dbError) throw dbError;
-
-    const messageWords = message.toLowerCase().split(' ');
-    
-    for (const product of products || []) {
-      if (messageWords.includes(product.name.toLowerCase()) && !product.is_verified) {
-        const scrapedData = await scrapeProductPage(product.url);
-        
-        if (scrapedData) {
-          const { error: updateError } = await supabase
-            .from('amokka_products')
-            .update(scrapedData)
-            .eq('id', product.id);
-
-          if (!updateError) {
-            console.log(`Successfully updated product: ${product.name}`);
-          }
-        }
-      }
-    }
 
     if (!products || products.length === 0) {
       throw new Error('No verified products found in the database');
@@ -123,17 +91,6 @@ serve(async (req) => {
       .join('\n');
 
     const response = await getChatResponse(context, message);
-
-    // Store the recommendation with the user's ID
-    await supabase
-      .from('coffee_recommendations')
-      .insert([
-        {
-          input_preferences: message,
-          recommendation: response,
-          user_id: user.id
-        }
-      ]);
 
     return new Response(
       JSON.stringify({ response }),
@@ -148,7 +105,7 @@ serve(async (req) => {
         details: 'An error occurred while processing your request.'
       }),
       { 
-        status: error.message.includes('authorization') ? 401 : 500,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
