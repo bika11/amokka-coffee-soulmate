@@ -104,18 +104,26 @@ const Index = () => {
       .filter(coffee => !excludeCoffee || coffee.name !== excludeCoffee.name)
       .map((coffee) => {
         let score = 0;
-        // Roast level matching (0-10 points)
+        
+        // Roast level matching (0-30 points) - Increased weight
         const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
-        score += (5 - roastDiff) * 2;
+        score += (5 - roastDiff) * 6; // Multiplied by 6 instead of 2 to give more weight
 
-        // Flavor matching (0-15 points)
+        // Flavor matching (0-15 points) - Medium weight
         selectedFlavors.forEach((flavor) => {
           if (coffee.flavorNotes.includes(flavor)) {
             score += 5;
           }
         });
 
-        // Priority bonus (1-9 points)
+        // Drink style compatibility (0-5 points) - Lower weight
+        if (drinkStyle === "With milk" && coffee.roastLevel >= 4) {
+          score += 5; // Darker roasts work better with milk
+        } else if (drinkStyle === "Straight up" && coffee.roastLevel <= 3) {
+          score += 5; // Lighter roasts work better straight up
+        }
+
+        // Priority bonus (1-9 points) - Kept as is for tiebreaking
         score += (10 - coffee.priority);
 
         return { coffee, score };

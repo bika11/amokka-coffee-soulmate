@@ -67,7 +67,7 @@ export const COFFEES: Coffee[] = [
     flavorNotes: ["nuts", "chocolate", "fruity"],
     url: "https://amokka.com/products/peru",
     imageUrl: "https://amokka.com/cdn/shop/products/5541_amokkapouchbag_dot_1000x.png?v=1663150715",
-    priority: 3  // Changed from 7 to 3 to increase recommendation likelihood
+    priority: 7
   },
   {
     name: "Gorgona Dark Roast Italian Blend",
