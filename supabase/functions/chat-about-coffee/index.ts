@@ -27,13 +27,18 @@ serve(async (req) => {
     // Fetch relevant product data
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
-      .select('*');
+      .select('*')
+      .eq('is_verified', true);
 
     if (dbError) throw dbError;
 
+    if (!products || products.length === 0) {
+      throw new Error('No verified products found in the database');
+    }
+
     // Create context from product data
     const context = products
-      ?.map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\n\n`)
+      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\n\n`)
       .join('\n');
 
     // Call OpenAI with context
@@ -48,10 +53,12 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. Only reference products mentioned in the context. If you don't have information about something, be honest about it.\n\nContext:\n${context}`
+            content: `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. Only reference products mentioned in the context. If you don't have information about something, be honest about it. Keep your responses concise and friendly.\n\nAvailable Products:\n${context}`
           },
           { role: 'user', content: message }
         ],
+        temperature: 0.7,
+        max_tokens: 500,
       }),
     });
 
@@ -64,12 +71,11 @@ serve(async (req) => {
 
     // Store the interaction
     await supabase
-      .from('user_interactions')
+      .from('coffee_recommendations')
       .insert([
         {
-          selected_flavors: ['conversation'],
-          selected_roast_level: 'medium',
-          selected_brew_method: 'chat',
+          input_preferences: message,
+          recommendation: response,
         }
       ]);
 
@@ -81,7 +87,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'If you see this error, please make sure there are verified products in the database.'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
