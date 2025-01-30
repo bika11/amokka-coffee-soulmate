@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -18,7 +18,16 @@ export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isBouncing, setIsBouncing] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsBouncing(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleToggleChat = () => {
     if (!isOpen) {
@@ -94,7 +103,9 @@ export const ChatBot = () => {
       ) : (
         <Button
           onClick={handleToggleChat}
-          className="rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 animate-bounce"
+          className={`rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200 ${
+            isBouncing ? "animate-bounce" : ""
+          }`}
         >
           <MessageSquare className="h-6 w-6" />
         </Button>
