@@ -32,7 +32,6 @@ serve(async (req) => {
     const html = await response.text();
 
     // Basic parsing of product data using string manipulation
-    // Note: This is a simplified example - in production you might want to use a proper HTML parser
     const name = html.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1]?.trim() || 'Unknown Product';
     const description = html.match(/<div[^>]*class="[^"]*product-description[^"]*"[^>]*>([\s\S]*?)<\/div>/)?.[1]?.trim() 
       ?.replace(/<[^>]+>/g, '') || 'No description available';
@@ -62,15 +61,15 @@ serve(async (req) => {
       }
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error('Missing Supabase environment variables');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // Store the product data
     const { data, error } = await supabase
@@ -83,6 +82,7 @@ serve(async (req) => {
         flavor_notes: flavorNotes,
         brewing_methods: brewingMethods,
         last_scraped_at: new Date().toISOString(),
+        is_verified: true,
       }, {
         onConflict: 'url'
       });
