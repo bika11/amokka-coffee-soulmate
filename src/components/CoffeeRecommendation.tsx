@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Coffee } from "@/lib/coffee-data";
-import { ExternalLink, RefreshCw, Coffee as CoffeeIcon } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ChatBot } from "./ChatBot";
 
@@ -24,12 +24,9 @@ export const CoffeeRecommendation = ({
   
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="flex items-center justify-center gap-3 mb-6">
-        <CoffeeIcon className="w-8 h-8 text-primary" />
-        <div className="text-center">
-          <div className="text-3xl font-bold text-primary">{matchScore}/10</div>
-          <div className="text-lg text-muted-foreground">{matchText}</div>
-        </div>
+      <div className="text-center mb-6">
+        <div className="text-3xl font-bold text-primary">{matchScore}/10</div>
+        <div className="text-lg text-muted-foreground">{matchText}</div>
       </div>
       
       <Card className="p-6 md:p-8 shadow-lg">
