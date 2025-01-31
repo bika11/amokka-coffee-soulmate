@@ -16,7 +16,7 @@ async function fetchWithRetry(
   url: string,
   options: RequestInit,
   maxRetries = 3,
-  initialDelay = 1000
+  initialDelay = 2000
 ): Promise<Response> {
   let lastError;
   
@@ -27,8 +27,9 @@ async function fetchWithRetry(
       const response = await fetch(url, options);
       
       if (response.status === 429) {
-        console.log('Rate limit hit, waiting before retry...');
-        throw new Error('RATE_LIMIT');
+        console.log(`Rate limit hit on attempt ${attempt + 1}, waiting before retry...`);
+        await sleep(initialDelay * Math.pow(2, attempt));
+        continue;
       }
       
       if (!response.ok) {
@@ -42,19 +43,12 @@ async function fetchWithRetry(
       lastError = error;
       console.error(`Attempt ${attempt + 1} failed:`, error);
       
-      if (error.message === 'RATE_LIMIT') {
-        if (attempt === maxRetries - 1) {
-          throw new Error('Service is currently busy. Please try again in a few minutes.');
-        }
+      if (attempt < maxRetries - 1) {
         await sleep(initialDelay * Math.pow(2, attempt));
         continue;
       }
       
-      if (attempt === maxRetries - 1) {
-        throw error;
-      }
-      
-      await sleep(initialDelay * Math.pow(2, attempt));
+      throw new Error('OpenAI service is currently unavailable. Please try again in a few minutes.');
     }
   }
   

@@ -11,9 +11,20 @@ const corsHeaders = {
 
 // Rate limiting configuration
 const WINDOW_MS = 60000; // 1 minute window
-const MAX_REQUESTS = 30; // Increased limit per window
+const MAX_REQUESTS = 50; // Increased limit per window
+const CLEANUP_INTERVAL = 300000; // Clean up every 5 minutes
 
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
+
+// Cleanup old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of ipRequests.entries()) {
+    if (now - data.timestamp > WINDOW_MS) {
+      ipRequests.delete(ip);
+    }
+  }
+}, CLEANUP_INTERVAL);
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -120,14 +131,14 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
     
-    if (error.message?.includes('Service is currently busy')) {
+    if (error.message?.includes('Too many requests')) {
       return new Response(
         JSON.stringify({ 
-          error: "Service temporarily unavailable",
-          details: "Please try again in a few minutes"
+          error: "Rate limit exceeded",
+          details: "Please wait a minute before trying again"
         }),
         { 
-          status: 503,
+          status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
