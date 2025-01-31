@@ -35,6 +35,12 @@ export async function getChatResponse(context: string, message: string, history:
     console.log('User message:', message);
     console.log('Chat history:', history);
     
+    // Convert history to Gemini-compatible format
+    const formattedHistory = history.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
@@ -47,10 +53,7 @@ export async function getChatResponse(context: string, message: string, history:
             role: 'user',
             parts: [{ text: SYSTEM_PROMPT + context }]
           },
-          ...history.map(msg => ({
-            role: msg.role,
-            parts: [{ text: msg.content }]
-          })),
+          ...formattedHistory,
           {
             role: 'user',
             parts: [{ text: message }]
