@@ -68,7 +68,7 @@ export async function getChatResponse(context: string, message: string): Promise
   
   try {
     console.log('Generating chat response...');
-    console.log('Context:', context);
+    console.log('Context length:', context.length);
     console.log('User message:', message);
     
     const requestBody = {
@@ -87,7 +87,7 @@ export async function getChatResponse(context: string, message: string): Promise
       max_tokens: 300,
     };
 
-    console.log('OpenAI Request:', JSON.stringify(requestBody, null, 2));
+    console.log('Making OpenAI request...');
 
     const response = await fetchWithRetry(
       url,
@@ -102,7 +102,6 @@ export async function getChatResponse(context: string, message: string): Promise
     );
 
     const data = await response.json();
-    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
     
     if (!data.choices?.[0]?.message?.content) {
       console.error('Unexpected OpenAI response format:', data);
@@ -110,18 +109,11 @@ export async function getChatResponse(context: string, message: string): Promise
     }
 
     const generatedResponse = data.choices[0].message.content;
-    console.log('Successfully generated response:', generatedResponse);
+    console.log('Successfully generated response');
     return generatedResponse;
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
-    
-    if (error.message.includes('high traffic')) {
-      throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
-    }
-    
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to generate response'
-    );
+    throw error;
   }
 }

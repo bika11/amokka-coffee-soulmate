@@ -9,9 +9,11 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Increase limits for rate limiting
+const WINDOW_MS = 60000; // 1 minute window
+const MAX_REQUESTS = 20; // Allow more requests per window
+
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
-const WINDOW_MS = 60000;
-const MAX_REQUESTS = 10;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -47,6 +49,7 @@ serve(async (req) => {
 
   try {
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
+    console.log('Client IP:', clientIP);
     
     if (!checkRateLimit(clientIP)) {
       console.log(`Rate limit exceeded for IP: ${clientIP}`);
@@ -83,7 +86,7 @@ serve(async (req) => {
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
       .select('id, name, url, description')
-      .limit(5);
+      .limit(10);
 
     if (dbError) {
       console.error('Database error:', dbError);
@@ -98,10 +101,10 @@ serve(async (req) => {
     console.log(`Found ${products.length} products`);
 
     let context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nProduct URL: ${p.url}\n\n`)
+      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nProduct URL: ${p.url}\n`)
       .join('\n');
 
-    console.log('Generated context:', context);
+    console.log('Generated context length:', context.length);
 
     const response = await getChatResponse(context, message);
     console.log('Got chat response successfully');
@@ -116,6 +119,21 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
+    
+    // More specific error handling
+    if (error.message?.includes('high traffic')) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Service temporarily unavailable",
+          details: "Please try again in a few minutes"
+        }),
+        { 
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error occurred',
