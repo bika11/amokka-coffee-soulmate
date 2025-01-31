@@ -68,7 +68,7 @@ export async function getChatResponse(context: string, message: string): Promise
     console.log('Generating chat response...');
     
     const requestBody = {
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',  // Changed from gpt-4 to gpt-4o-mini
       messages: [
         {
           role: 'system',
