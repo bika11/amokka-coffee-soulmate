@@ -1,3 +1,5 @@
+/// <reference types="deno-runtime" />
+/// <reference types="deno-runtime" />
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -97,9 +99,17 @@ serve(async (req) => {
 
     console.log(`Found ${products.length} verified products`);
 
-    const context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
-      .join('\n');
+    let context = "";
+    try {
+      context = products
+        .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
+        .join('\n');
+      console.log('Context for OpenAI:', context); // Log the context being sent
+    } catch (contextError) {
+      console.error('Error creating context:', contextError);
+      throw contextError;
+    }
+
 
     console.log('Getting chat response...');
     const response = await getChatResponse(context, message);

@@ -1,4 +1,7 @@
+/// <reference types="deno-runtime" />
+/// <reference types="deno-runtime" />
 const SYSTEM_PROMPT = `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. When mentioning specific products, always include their URL as a clickable link in markdown format ([Product Name](URL)). Only reference products mentioned in the context. If you don't have information about something, be honest about it. Keep your responses concise and friendly.
+
 
 Available Products:
 `;
@@ -65,6 +68,21 @@ export async function getChatResponse(context: string, message: string) {
     console.log('Context length:', context.length);
     console.log('User message:', message);
     
+    const requestBody = JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT + context
+        },
+        { role: 'user', content: message }
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    console.log('OpenAI Request Body:', requestBody);
+
     const response = await fetchWithRetry(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -73,23 +91,19 @@ export async function getChatResponse(context: string, message: string) {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: SYSTEM_PROMPT + context
-            },
-            { role: 'user', content: message }
-          ],
-          temperature: 0.7,
-          max_tokens: 500,
-        }),
+        body: requestBody,
       }
     );
 
-    console.log('Successfully got response from OpenAI:', response);
-    return response;
+    console.log('OpenAI Response Status:', response.status);
+    console.log('OpenAI Response Headers:', response.headers);
+    const responseText = await response.text();
+    console.log('OpenAI Response Text:', responseText);
+
+    const responseData = await response.json();
+    console.log('OpenAI Response Data:', JSON.stringify(responseData, null, 2));
+    return responseData.choices[0].message.content;
+
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
