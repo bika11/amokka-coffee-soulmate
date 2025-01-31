@@ -71,7 +71,7 @@ export async function getChatResponse(context: string, message: string): Promise
     console.log('Generating chat response...');
     
     const requestBody = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',

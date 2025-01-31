@@ -23,6 +23,7 @@ export type Database = {
           created_at: string | null
           crop_year: string | null
           description: string | null
+          description_tsv: unknown | null
           end_temperature: string | null
           flavor_appreciation: string | null
           flavor_notes: string[] | null
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string | null
           crop_year?: string | null
           description?: string | null
+          description_tsv?: unknown | null
           end_temperature?: string | null
           flavor_appreciation?: string | null
           flavor_notes?: string[] | null
@@ -99,6 +101,7 @@ export type Database = {
           created_at?: string | null
           crop_year?: string | null
           description?: string | null
+          description_tsv?: unknown | null
           end_temperature?: string | null
           flavor_appreciation?: string | null
           flavor_notes?: string[] | null
