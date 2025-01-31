@@ -21,13 +21,14 @@ async function fetchWithRetry(
   baseDelay = 2000
 ): Promise<Response> {
   let lastError;
+  let currentResponse;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`OpenAI API call attempt ${attempt + 1}/${maxRetries}`);
       
-      const response = await fetch(url, options);
-      const responseText = await response.text();
+      currentResponse = await fetch(url, options);
+      const responseText = await currentResponse.text();
       
       try {
         // Try to parse the response as JSON to check for API-level errors
@@ -38,19 +39,19 @@ async function fetchWithRetry(
         }
       } catch (parseError) {
         // If it's not JSON or parsing fails, continue with the original response
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (!currentResponse.ok) {
+          throw new Error(`HTTP error! status: ${currentResponse.status}`);
         }
       }
       
       // If we got here, recreate the response with the body we already read
-      return new Response(responseText, response);
+      return new Response(responseText, currentResponse);
       
     } catch (error) {
       lastError = error;
       console.error(`Attempt ${attempt + 1} failed:`, error);
       
-      if (response?.status === 429 || error.message?.includes('rate limit')) {
+      if (currentResponse?.status === 429 || error.message?.includes('rate limit')) {
         const delay = baseDelay * Math.pow(2, attempt);
         console.log(`Rate limit hit, waiting ${delay}ms before retry...`);
         await sleep(delay);
