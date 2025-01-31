@@ -51,7 +51,6 @@ async function fetchWithRetry(
         throw error;
       }
       
-      // Exponential backoff
       await sleep(initialDelay * Math.pow(2, attempt));
     }
   }
@@ -69,6 +68,8 @@ export async function getChatResponse(context: string, message: string): Promise
   
   try {
     console.log('Generating chat response...');
+    console.log('Context:', context);
+    console.log('User message:', message);
     
     const requestBody = {
       model: 'gpt-3.5-turbo',
@@ -101,15 +102,20 @@ export async function getChatResponse(context: string, message: string): Promise
     );
 
     const data = await response.json();
-    const generatedResponse = data.choices[0].message.content;
+    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
+    
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Unexpected OpenAI response format:', data);
+      throw new Error('Invalid response from OpenAI');
+    }
 
+    const generatedResponse = data.choices[0].message.content;
     console.log('Successfully generated response:', generatedResponse);
     return generatedResponse;
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
     
-    // Return user-friendly error messages
     if (error.message.includes('high traffic')) {
       throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
     }
