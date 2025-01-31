@@ -23,10 +23,18 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       }
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`OpenAI API error (${response.status}):`, errorText);
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText || 'Unknown error'}`);
       }
 
-      return response;
+      const data = await response.json();
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('Unexpected OpenAI API response format:', data);
+        throw new Error('Invalid response format from OpenAI API');
+      }
+
+      return data.choices[0].message.content;
     } catch (error) {
       console.error(`Attempt ${attempt + 1} failed:`, error);
       lastError = error;
@@ -38,7 +46,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
     }
   }
 
-  throw lastError;
+  throw lastError || new Error('Failed to get response from OpenAI API');
 }
 
 export async function getChatResponse(context: string, message: string) {
@@ -74,14 +82,14 @@ export async function getChatResponse(context: string, message: string) {
       }
     );
 
-    const data = await response.json();
-    return data.choices[0].message.content;
+    return response;
   } catch (error) {
     console.error('Error in getChatResponse:', error);
+    const errorMessage = error?.message || 'Unknown error occurred';
     throw new Error(
-      error.message.includes('429') 
+      errorMessage.includes('429') 
         ? 'The service is currently busy. Please try again in a few moments.'
-        : error.message
+        : errorMessage
     );
   }
 }
