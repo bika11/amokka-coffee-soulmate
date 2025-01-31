@@ -15,21 +15,22 @@ async function sleep(ms: number) {
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  maxRetries = 3
+  maxRetries = 3,
+  initialDelay = 1000
 ): Promise<Response> {
+  let lastError;
+  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`Attempt ${attempt + 1} to call OpenAI API`);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const response = await fetch(url, options);
       
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
+      if (response.status === 429) {
+        const errorData = await response.json();
+        console.error('Rate limit error:', errorData);
+        throw new Error('RATE_LIMIT');
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -39,21 +40,23 @@ async function fetchWithRetry(
       
       return response;
     } catch (error) {
+      lastError = error;
       console.error(`Attempt ${attempt + 1} failed:`, error);
       
-      if (error.name === 'AbortError') {
-        throw new Error('Request timed out');
+      if (error.message === 'RATE_LIMIT') {
+        throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
       }
       
       if (attempt === maxRetries - 1) {
         throw error;
       }
       
-      await sleep(1000 * Math.pow(2, attempt));
+      // Exponential backoff
+      await sleep(initialDelay * Math.pow(2, attempt));
     }
   }
   
-  throw new Error('Max retries reached');
+  throw lastError;
 }
 
 export async function getChatResponse(context: string, message: string): Promise<string> {
@@ -68,7 +71,7 @@ export async function getChatResponse(context: string, message: string): Promise
     console.log('Generating chat response...');
     
     const requestBody = {
-      model: 'gpt-4o-mini',  // Changed from gpt-4 to gpt-4o-mini
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -105,6 +108,12 @@ export async function getChatResponse(context: string, message: string): Promise
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
+    
+    // Return user-friendly error messages
+    if (error.message.includes('high traffic')) {
+      throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
+    }
+    
     throw new Error(
       error instanceof Error ? error.message : 'Failed to generate response'
     );

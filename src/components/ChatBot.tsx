@@ -46,8 +46,8 @@ export const ChatBot = () => {
       });
 
       if (error) {
-        if (error.message?.includes('rate limit')) {
-          throw new Error('We are experiencing high traffic. Please try again in a few seconds.');
+        if (error.message?.includes('high traffic')) {
+          throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
         }
         throw error;
       }
