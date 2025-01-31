@@ -10,8 +10,8 @@ const corsHeaders = {
 };
 
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
-const WINDOW_MS = 60000; // 1 minute
-const MAX_REQUESTS = 10; // Increased to 10 requests per minute since OpenAI has higher rate limits
+const WINDOW_MS = 60000;
+const MAX_REQUESTS = 10;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -38,7 +38,6 @@ function checkRateLimit(ip: string): boolean {
 serve(async (req) => {
   console.log('Received request:', req.method);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,

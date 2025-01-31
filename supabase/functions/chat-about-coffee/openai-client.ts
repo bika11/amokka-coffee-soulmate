@@ -9,12 +9,22 @@ async function sleep(ms: number) {
 
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3) {
   let lastError;
-  let waitTime = 1000; // Start with 1 second
+  let waitTime = 1000;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`Attempt ${attempt + 1} to call OpenAI API`);
-      const response = await fetch(url, options);
+      
+      // Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (response.status === 429) {
         const errorData = await response.json();
@@ -44,10 +54,15 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       console.error(`Attempt ${attempt + 1} failed:`, error);
       lastError = error;
       
+      if (error.name === 'AbortError') {
+        console.error('Request timed out');
+        throw new Error('Request timed out after 30 seconds');
+      }
+      
       if (attempt < maxRetries - 1) {
         console.log(`Waiting ${waitTime}ms before retry...`);
         await sleep(waitTime);
-        waitTime *= 2; // Exponential backoff
+        waitTime *= 2;
       }
     }
   }
