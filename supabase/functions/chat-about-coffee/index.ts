@@ -81,8 +81,8 @@ serve(async (req) => {
 
     console.log('Fetching products from database...');
     const { data: products, error: dbError } = await supabase
-      .from('coffees')
-      .select('*')
+      .from('amokka_products')
+      .select('id, name, url, description')
       .limit(5);
 
     if (dbError) {
@@ -98,7 +98,7 @@ serve(async (req) => {
     console.log(`Found ${products.length} products`);
 
     let context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nProduct URL: ${p.product_link}\n\n`)
+      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nProduct URL: ${p.url}\n\n`)
       .join('\n');
 
     console.log('Generated context:', context);

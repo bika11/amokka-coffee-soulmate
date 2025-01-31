@@ -12,10 +12,11 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3) {
-  let lastError;
-  let waitTime = 1000;
-
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`Attempt ${attempt + 1} to call OpenAI API`);
@@ -32,54 +33,42 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`OpenAI API error (${response.status}):`, errorText);
+        console.error(`API error (${response.status}):`, errorText);
         throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
-
-      const data = await response.json();
-      console.log('OpenAI API response:', JSON.stringify(data, null, 2));
-
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format from OpenAI:', data);
-        throw new Error('Invalid response format from OpenAI API');
-      }
-
-      return data.choices[0].message.content;
+      
+      return response;
     } catch (error) {
       console.error(`Attempt ${attempt + 1} failed:`, error);
-      lastError = error;
       
       if (error.name === 'AbortError') {
-        console.error('Request timed out');
-        throw new Error('Request timed out after 30 seconds');
+        throw new Error('Request timed out');
       }
       
-      if (attempt < maxRetries - 1) {
-        console.log(`Waiting ${waitTime}ms before retry...`);
-        await sleep(waitTime);
-        waitTime *= 2;
+      if (attempt === maxRetries - 1) {
+        throw error;
       }
+      
+      await sleep(1000 * Math.pow(2, attempt));
     }
   }
-
-  throw lastError || new Error('Failed to get response from OpenAI API');
+  
+  throw new Error('Max retries reached');
 }
 
-export async function getChatResponse(context: string, message: string) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  
-  if (!openAIApiKey) {
-    console.error('OpenAI API key is not configured');
-    throw new Error('OpenAI API key is not configured');
+export async function getChatResponse(context: string, message: string): Promise<string> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (!OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured');
   }
 
+  const url = 'https://api.openai.com/v1/chat/completions';
+  
   try {
-    console.log('Starting chat response generation');
-    console.log('Context length:', context.length);
-    console.log('User message:', message);
+    console.log('Generating chat response...');
     
     const requestBody = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-4',
       messages: [
         {
           role: 'system',
@@ -97,19 +86,22 @@ export async function getChatResponse(context: string, message: string) {
     console.log('OpenAI Request:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetchWithRetry(
-      'https://api.openai.com/v1/chat/completions',
+      url,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       }
     );
 
-    console.log('Successfully generated response:', response);
-    return response;
+    const data = await response.json();
+    const generatedResponse = data.choices[0].message.content;
+
+    console.log('Successfully generated response:', generatedResponse);
+    return generatedResponse;
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
