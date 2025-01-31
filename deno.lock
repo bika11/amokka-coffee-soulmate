@@ -5,7 +5,8 @@
     "https://deno.land/x/gotrue/mod.ts": "https://deno.land/x/gotrue@3.0.0/mod.ts",
     "https://deno.land/x/postgrest/mod.ts": "https://deno.land/x/postgrest@1.1.0/mod.ts",
     "https://deno.land/x/realtime/mod.ts": "https://deno.land/x/realtime@1.2.0/mod.ts",
-    "https://deno.land/x/storagee/mod.ts": "https://deno.land/x/storagee@1.3.0/mod.ts"
+    "https://deno.land/x/storagee/mod.ts": "https://deno.land/x/storagee@1.3.0/mod.ts",
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.48.1"
   },
   "remote": {
     "https://deno.land/std@0.113.0/_util/assert.ts": "2f868145a042a11d5ad0a3c748dcf580add8a0dbc0e876eaa0026303a5488f58",
@@ -95,7 +96,8 @@
     "https://deno.land/x/supabase@1.0.0/src/lib/SupabaseRealtimeClient.ts": "d2eb2651fd02dba229dc0b72f8580679045bcc9fe397fb1a7e96272a5aac7d33",
     "https://deno.land/x/supabase@1.0.0/src/lib/constants.ts": "490234b15b9b919ee2b8cb0c90024d458d1ea0031835d61b988f38d696ade4f8",
     "https://deno.land/x/supabase@1.0.0/src/lib/types.ts": "2d71888af679e5fb09ed62f04093bffabb23d6d2672cabd592f08d92030cc6ef",
-    "https://deno.land/x/xhr@0.1.0/mod.ts": "5200325d879e571961f0927e8e32e66fd33f4ba0d29a219560cf9e0fe9bc6cdf"
+    "https://deno.land/x/xhr@0.1.0/mod.ts": "5200325d879e571961f0927e8e32e66fd33f4ba0d29a219560cf9e0fe9bc6cdf",
+    "https://esm.sh/@supabase/supabase-js@2.48.1": "b9a3a846ddbe85569795a9a2055336f1353c6eea2f5ca05bd6a6c14284dfe20a"
   },
   "workspace": {
     "packageJson": {
@@ -155,6 +157,7 @@
         "npm:react-day-picker@^8.10.1",
         "npm:react-dom@^18.3.1",
         "npm:react-hook-form@^7.53.0",
+        "npm:react-markdown@^9.0.3",
         "npm:react-resizable-panels@^2.1.3",
         "npm:react-router-dom@^6.26.2",
         "npm:react@^18.3.1",
