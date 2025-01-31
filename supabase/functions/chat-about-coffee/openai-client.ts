@@ -69,7 +69,7 @@ export async function getChatResponse(context: string, message: string) {
     console.log('User message:', message);
     
     const requestBody = {
-      model: 'gpt-4-mini',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
