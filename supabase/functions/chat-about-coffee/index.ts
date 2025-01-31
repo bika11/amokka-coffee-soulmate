@@ -6,6 +6,7 @@ import { getChatResponse } from "./gemini-client.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
@@ -37,8 +38,12 @@ function checkRateLimit(ip: string): boolean {
 serve(async (req) => {
   console.log('Received request:', req.method);
   
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
 
   try {
