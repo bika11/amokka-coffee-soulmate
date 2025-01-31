@@ -74,11 +74,28 @@ export async function getChatResponse(context: string, message: string) {
           role: 'system',
           content: SYSTEM_PROMPT + context
         },
+<<<<<<< HEAD
         { role: 'user', content: message }
       ],
       temperature: 0.7,
       max_tokens: 500,
     });
+=======
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: SYSTEM_PROMPT + context
+            },
+            { role: 'user', content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
+        }),
+      }
+    );
+>>>>>>> origin/main
 
     console.log('OpenAI Request Body:', requestBody);
 
