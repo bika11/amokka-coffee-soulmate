@@ -81,9 +81,8 @@ serve(async (req) => {
 
     console.log('Fetching products from database...');
     const { data: products, error: dbError } = await supabase
-      .from('amokka_products')
+      .from('coffees')
       .select('*')
-      .eq('is_verified', true)
       .limit(5);
 
     if (dbError) {
@@ -92,14 +91,14 @@ serve(async (req) => {
     }
 
     if (!products || products.length === 0) {
-      console.warn('No verified products found');
-      throw new Error('No verified products found in the database');
+      console.warn('No products found');
+      throw new Error('No products found in the database');
     }
 
-    console.log(`Found ${products.length} verified products`);
+    console.log(`Found ${products.length} products`);
 
     let context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
+      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nProduct URL: ${p.product_link}\n\n`)
       .join('\n');
 
     console.log('Generated context:', context);

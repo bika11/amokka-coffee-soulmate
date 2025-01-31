@@ -1,7 +1,12 @@
-const SYSTEM_PROMPT = `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. When mentioning specific products, always include their URL as a clickable link in markdown format ([Product Name](URL)). Only reference products mentioned in the context. If you don't have information about something, be honest about it. Keep your responses concise and friendly.
+const SYSTEM_PROMPT = `You are a coffee expert who helps customers learn about Amokka's coffee selection. Your responses should be friendly, concise, and focused on helping customers find their perfect coffee match. When mentioning specific products, include their URL as a markdown link ([Product Name](URL)).
 
-Available Products:
-`;
+Key guidelines:
+- Keep responses under 3-4 sentences when possible
+- Only reference products from the provided context
+- Be honest if you don't have information about something
+- Focus on being helpful and direct
+
+Available Products:`;
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -15,9 +20,8 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
     try {
       console.log(`Attempt ${attempt + 1} to call OpenAI API`);
       
-      // Add timeout to fetch request
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const response = await fetch(url, {
         ...options,
@@ -25,15 +29,6 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       });
       
       clearTimeout(timeoutId);
-      
-      if (response.status === 429) {
-        const errorData = await response.json();
-        console.log('Rate limit hit:', errorData);
-        const retryAfter = parseInt(response.headers.get('retry-after') || '20');
-        console.log(`Rate limited. Waiting ${retryAfter}s before retry...`);
-        await sleep(retryAfter * 1000);
-        continue;
-      }
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -88,12 +83,15 @@ export async function getChatResponse(context: string, message: string) {
       messages: [
         {
           role: 'system',
-          content: SYSTEM_PROMPT + context
+          content: SYSTEM_PROMPT + '\n\n' + context
         },
-        { role: 'user', content: message }
+        { 
+          role: 'user', 
+          content: message 
+        }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 300,
     };
 
     console.log('OpenAI Request:', JSON.stringify(requestBody, null, 2));
@@ -110,16 +108,13 @@ export async function getChatResponse(context: string, message: string) {
       }
     );
 
-    console.log('Successfully generated response');
+    console.log('Successfully generated response:', response);
     return response;
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
-    if (error.message?.includes('rate limit')) {
-      throw new Error('We are experiencing high traffic. Please try again in a few seconds.');
-    }
     throw new Error(
-      error instanceof Error ? error.message : 'Unknown error occurred'
+      error instanceof Error ? error.message : 'Failed to generate response'
     );
   }
 }
