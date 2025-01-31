@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getChatResponse } from "./gemini-client.ts";
+import { getChatResponse } from "./openai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +11,7 @@ const corsHeaders = {
 
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
 const WINDOW_MS = 60000; // 1 minute
-const MAX_REQUESTS = 10; // Increased to 10 requests per minute since Gemini has higher rate limits
+const MAX_REQUESTS = 10; // Increased to 10 requests per minute since OpenAI has higher rate limits
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
