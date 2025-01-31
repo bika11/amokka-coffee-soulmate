@@ -27,15 +27,14 @@ async function fetchWithRetry(
       const response = await fetch(url, options);
       
       if (response.status === 429) {
-        const errorData = await response.json();
-        console.error('Rate limit error:', errorData);
+        console.log('Rate limit hit, waiting before retry...');
         throw new Error('RATE_LIMIT');
       }
       
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`API error (${response.status}):`, errorText);
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(`OpenAI API error: ${response.status}`);
       }
       
       return response;
@@ -44,7 +43,11 @@ async function fetchWithRetry(
       console.error(`Attempt ${attempt + 1} failed:`, error);
       
       if (error.message === 'RATE_LIMIT') {
-        throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
+        if (attempt === maxRetries - 1) {
+          throw new Error('Service is currently busy. Please try again in a few minutes.');
+        }
+        await sleep(initialDelay * Math.pow(2, attempt));
+        continue;
       }
       
       if (attempt === maxRetries - 1) {

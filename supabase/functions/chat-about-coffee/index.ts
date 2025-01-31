@@ -9,9 +9,9 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// Increase limits for rate limiting
+// Rate limiting configuration
 const WINDOW_MS = 60000; // 1 minute window
-const MAX_REQUESTS = 20; // Allow more requests per window
+const MAX_REQUESTS = 30; // Increased limit per window
 
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
 
@@ -120,8 +120,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
     
-    // More specific error handling
-    if (error.message?.includes('high traffic')) {
+    if (error.message?.includes('Service is currently busy')) {
       return new Response(
         JSON.stringify({ 
           error: "Service temporarily unavailable",
