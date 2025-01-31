@@ -76,8 +76,9 @@ serve(async (req) => {
       );
     }
 
-    const { message } = await req.json();
+    const { message, history = [] } = await req.json();
     console.log('Processing message:', message);
+    console.log('Chat history:', history);
     
     if (!message) {
       throw new Error('No message provided');
@@ -127,7 +128,7 @@ Product URL: ${p.url}
 
     console.log('Generated context length:', context.length);
 
-    const response = await getChatResponse(context, message);
+    const response = await getChatResponse(context, message, history);
     console.log('Got chat response successfully');
 
     return new Response(

@@ -11,11 +11,17 @@ When responding:
 - Only reference products mentioned in the context
 - If you don't have information about something, be honest about it in a friendly way
 - Keep responses concise but engaging
+- Maintain context from previous messages in the conversation
 
 Available Products:
 `;
 
-export async function getChatResponse(context: string, message: string) {
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export async function getChatResponse(context: string, message: string, history: ChatMessage[] = []) {
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
   
   if (!geminiApiKey) {
@@ -27,6 +33,7 @@ export async function getChatResponse(context: string, message: string) {
     console.log('Starting chat response generation');
     console.log('Context length:', context.length);
     console.log('User message:', message);
+    console.log('Chat history:', history);
     
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
@@ -38,7 +45,15 @@ export async function getChatResponse(context: string, message: string) {
         contents: [
           {
             role: 'user',
-            parts: [{ text: `${SYSTEM_PROMPT}${context}\n\nUser question: ${message}` }]
+            parts: [{ text: SYSTEM_PROMPT + context }]
+          },
+          ...history.map(msg => ({
+            role: msg.role,
+            parts: [{ text: msg.content }]
+          })),
+          {
+            role: 'user',
+            parts: [{ text: message }]
           }
         ],
         generationConfig: {

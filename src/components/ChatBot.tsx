@@ -42,7 +42,13 @@ export const ChatBot = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
-        body: { message: userMessage },
+        body: { 
+          message: userMessage,
+          history: messages.map(msg => ({
+            role: msg.isUser ? 'user' : 'assistant',
+            content: msg.content
+          }))
+        },
       });
 
       if (error) {
