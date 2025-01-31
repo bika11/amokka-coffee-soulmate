@@ -83,7 +83,8 @@ serve(async (req) => {
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
       .select('*')
-      .eq('is_verified', true);
+      .eq('is_verified', true)
+      .limit(5);
 
     if (dbError) {
       console.error('Database error:', dbError);

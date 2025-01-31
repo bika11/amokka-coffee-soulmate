@@ -50,6 +50,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
     }
   }
 
+  console.error('fetchWithRetry failed after multiple retries:', lastError); // Log the error from fetchWithRetry
   throw lastError || new Error('Failed to get response from OpenAI API');
 }
 
@@ -81,27 +82,42 @@ export async function getChatResponse(context: string, message: string) {
 
     console.log('OpenAI Request Body:', requestBody);
 
-    const response = await fetchWithRetry(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
-      }
-    );
+    let response;
+    try {
+      response = await fetchWithRetry(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
+        }
+      );
+    } catch (fetchError) {
+      console.error('Fetch error when calling OpenAI API:', fetchError);
+      throw new Error('Failed to call OpenAI API');
+    }
 
+    console.log('Response before JSON parsing:', response); // Log the response object
     console.log('OpenAI Response Status:', response.status);
     console.log('OpenAI Response Headers:', response.headers);
     const responseText = await response.text();
     console.log('OpenAI Response Text:', responseText);
 
-    const responseData = await response.json();
-    console.log('OpenAI Response Data:', JSON.stringify(responseData, null, 2));
-    return responseData.choices[0].message.content;
 
+    let responseData;
+    try {
+      responseData = await response.json();
+      console.log('OpenAI Response Data:', JSON.stringify(responseData, null, 2));
+    } catch (jsonError) {
+      console.error('Error parsing OpenAI response JSON:', jsonError);
+      console.log('Raw response text that failed to parse:', responseText);
+      throw new Error('Failed to parse OpenAI API response');
+    }
+
+    return responseData.choices[0].message.content;
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
