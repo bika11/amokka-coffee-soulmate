@@ -13,6 +13,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      console.log(`Attempt ${attempt + 1} to call OpenAI API`);
       const response = await fetch(url, options);
       
       if (response.status === 429) {
@@ -29,6 +30,8 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       }
 
       const data = await response.json();
+      console.log('OpenAI API response:', JSON.stringify(data, null, 2));
+
       if (!data.choices?.[0]?.message?.content) {
         console.error('Unexpected OpenAI API response format:', data);
         throw new Error('Invalid response format from OpenAI API');
@@ -58,6 +61,7 @@ export async function getChatResponse(context: string, message: string) {
 
   try {
     console.log('Sending request to OpenAI with context length:', context.length);
+    console.log('User message:', message);
     
     const response = await fetchWithRetry(
       'https://api.openai.com/v1/chat/completions',
@@ -82,7 +86,9 @@ export async function getChatResponse(context: string, message: string) {
       }
     );
 
+    console.log('Successfully got response from OpenAI:', response);
     return response;
+
   } catch (error) {
     console.error('Error in getChatResponse:', error);
     const errorMessage = error?.message || 'Unknown error occurred';
