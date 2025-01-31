@@ -10,32 +10,39 @@ export async function getChatResponse(context: string, message: string) {
     throw new Error('OpenAI API key is not configured');
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: SYSTEM_PROMPT + context
-        },
-        { role: 'user', content: message }
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    }),
-  });
+  try {
+    console.log('Sending request to OpenAI with context length:', context.length);
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPT + context
+          },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('OpenAI API error:', error);
-    throw new Error('Failed to get response from OpenAI');
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error in getChatResponse:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
