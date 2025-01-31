@@ -32,7 +32,13 @@ export const RecommendationScore = ({ matchScore }: RecommendationScoreProps) =>
   const matchQuality = getMatchQuality(matchScore);
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-4 mb-8">
+    <div className="flex flex-col items-center justify-center space-y-6 mb-8">
+      <img 
+        src="/amokka-og.png" 
+        alt="Amokka Logo" 
+        className="w-32 h-auto mb-2"
+      />
+      
       <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 animate-pulse">
         <span className="text-3xl" role="img" aria-label="match quality">
           {matchQuality.icon}
