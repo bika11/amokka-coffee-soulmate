@@ -26,14 +26,14 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`OpenAI API error (${response.status}):`, errorText);
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText || 'Unknown error'}`);
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('OpenAI API response:', JSON.stringify(data, null, 2));
+      console.log('OpenAI API response structure:', JSON.stringify(data, null, 2));
 
       if (!data.choices?.[0]?.message?.content) {
-        console.error('Unexpected OpenAI API response format:', data);
+        console.error('Invalid response format from OpenAI:', data);
         throw new Error('Invalid response format from OpenAI API');
       }
 
@@ -56,11 +56,13 @@ export async function getChatResponse(context: string, message: string) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   
   if (!openAIApiKey) {
+    console.error('OpenAI API key is not configured');
     throw new Error('OpenAI API key is not configured');
   }
 
   try {
-    console.log('Sending request to OpenAI with context length:', context.length);
+    console.log('Sending request to OpenAI');
+    console.log('Context length:', context.length);
     console.log('User message:', message);
     
     const response = await fetchWithRetry(
@@ -72,7 +74,7 @@ export async function getChatResponse(context: string, message: string) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages: [
             {
               role: 'system',
@@ -91,11 +93,8 @@ export async function getChatResponse(context: string, message: string) {
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
-    const errorMessage = error?.message || 'Unknown error occurred';
     throw new Error(
-      errorMessage.includes('429') 
-        ? 'The service is currently busy. Please try again in a few moments.'
-        : errorMessage
+      error instanceof Error ? error.message : 'Unknown error occurred'
     );
   }
 }

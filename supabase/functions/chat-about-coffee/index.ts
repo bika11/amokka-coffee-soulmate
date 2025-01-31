@@ -117,7 +117,7 @@ serve(async (req) => {
     console.error('Error in chat-about-coffee function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         details: 'An error occurred while processing your request.'
       }),
       { 
