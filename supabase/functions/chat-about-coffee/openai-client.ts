@@ -16,6 +16,15 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       console.log(`Attempt ${attempt + 1} to call OpenAI API`);
       const response = await fetch(url, options);
       
+      if (response.status === 429) {
+        const errorData = await response.json();
+        console.log('Rate limit hit:', errorData);
+        const retryAfter = parseInt(response.headers.get('retry-after') || '20');
+        console.log(`Rate limited. Waiting ${retryAfter}s before retry...`);
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`OpenAI API error (${response.status}):`, errorText);
@@ -38,7 +47,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
       if (attempt < maxRetries - 1) {
         console.log(`Waiting ${waitTime}ms before retry...`);
         await sleep(waitTime);
-        waitTime *= 2;
+        waitTime *= 2; // Exponential backoff
       }
     }
   }
@@ -91,6 +100,9 @@ export async function getChatResponse(context: string, message: string) {
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
+    if (error.message?.includes('rate limit')) {
+      throw new Error('We are experiencing high traffic. Please try again in a few seconds.');
+    }
     throw new Error(
       error instanceof Error ? error.message : 'Unknown error occurred'
     );

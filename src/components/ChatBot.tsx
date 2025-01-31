@@ -45,7 +45,12 @@ export const ChatBot = () => {
         body: { message: userMessage },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('rate limit')) {
+          throw new Error('We are experiencing high traffic. Please try again in a few seconds.');
+        }
+        throw error;
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -55,7 +60,7 @@ export const ChatBot = () => {
       console.error("Error getting response:", error);
       toast({
         title: "Error",
-        description: "I apologize, but I'm having trouble responding right now. Please try again later.",
+        description: error instanceof Error ? error.message : "I apologize, but I'm having trouble responding right now. Please try again later.",
         variant: "destructive",
       });
     } finally {
