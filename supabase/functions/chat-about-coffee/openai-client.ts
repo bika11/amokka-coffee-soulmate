@@ -15,11 +15,9 @@ async function sleep(ms: number) {
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  maxRetries = 3,
-  initialDelay = 2000
+  maxRetries = 5,
+  initialDelay = 1000
 ): Promise<Response> {
-  let lastError;
-  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`Attempt ${attempt + 1} to call OpenAI API`);
@@ -27,8 +25,9 @@ async function fetchWithRetry(
       const response = await fetch(url, options);
       
       if (response.status === 429) {
-        console.log(`Rate limit hit on attempt ${attempt + 1}, waiting before retry...`);
-        await sleep(initialDelay * Math.pow(2, attempt));
+        const waitTime = initialDelay * Math.pow(2, attempt);
+        console.log(`Rate limit hit on attempt ${attempt + 1}, waiting ${waitTime}ms before retry...`);
+        await sleep(waitTime);
         continue;
       }
       
@@ -40,19 +39,20 @@ async function fetchWithRetry(
       
       return response;
     } catch (error) {
-      lastError = error;
       console.error(`Attempt ${attempt + 1} failed:`, error);
       
       if (attempt < maxRetries - 1) {
-        await sleep(initialDelay * Math.pow(2, attempt));
+        const waitTime = initialDelay * Math.pow(2, attempt);
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await sleep(waitTime);
         continue;
       }
       
-      throw new Error('OpenAI service is currently unavailable. Please try again in a few minutes.');
+      throw new Error('OpenAI service is temporarily unavailable. Please try again in a few minutes.');
     }
   }
   
-  throw lastError;
+  throw new Error('Maximum retries exceeded. Please try again later.');
 }
 
 export async function getChatResponse(context: string, message: string): Promise<string> {
@@ -69,7 +69,7 @@ export async function getChatResponse(context: string, message: string): Promise
     console.log('User message:', message);
     
     const requestBody = {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
