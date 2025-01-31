@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ProgressBar";
 import { FormSteps } from "./recommendation-form/FormSteps";
+import { motion } from "framer-motion";
 import {
   type DrinkStyle,
   type BrewMethod,
@@ -61,23 +62,32 @@ export const CoffeeRecommendationForm = ({
   };
 
   return (
-    <Card className="w-full max-w-lg p-6 space-y-6">
-      <ProgressBar currentStep={step} totalSteps={4} />
-      <div className="min-h-[300px] flex items-center justify-center">
-        <FormSteps
-          step={step}
-          isLoading={isLoading}
-          drinkStyle={drinkStyle}
-          roastLevel={roastLevel}
-          selectedFlavors={selectedFlavors}
-          brewMethod={brewMethod}
-          onDrinkStyleSelect={setDrinkStyle}
-          onRoastLevelChange={setRoastLevel}
-          onFlavorToggle={handleFlavorToggle}
-          onBrewMethodSelect={setBrewMethod}
-          onNextStep={() => setStep(3)}
-        />
-      </div>
-    </Card>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-lg mx-auto"
+    >
+      <Card className="overflow-hidden bg-white shadow-xl rounded-xl border-2">
+        <div className="p-6 space-y-8">
+          <ProgressBar currentStep={step} totalSteps={4} />
+          <div className="min-h-[300px] flex items-center justify-center">
+            <FormSteps
+              step={step}
+              isLoading={isLoading}
+              drinkStyle={drinkStyle}
+              roastLevel={roastLevel}
+              selectedFlavors={selectedFlavors}
+              brewMethod={brewMethod}
+              onDrinkStyleSelect={setDrinkStyle}
+              onRoastLevelChange={setRoastLevel}
+              onFlavorToggle={handleFlavorToggle}
+              onBrewMethodSelect={setBrewMethod}
+              onNextStep={() => setStep(3)}
+            />
+          </div>
+        </div>
+      </Card>
+    </motion.div>
   );
 };
