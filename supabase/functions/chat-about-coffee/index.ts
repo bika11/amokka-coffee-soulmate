@@ -8,7 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting implementation
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
 const WINDOW_MS = 60000; // 1 minute
 const MAX_REQUESTS = 5; // 5 requests per minute
@@ -23,7 +22,6 @@ function checkRateLimit(ip: string): boolean {
   }
 
   if (now - requestData.timestamp > WINDOW_MS) {
-    // Reset if window has passed
     ipRequests.set(ip, { count: 1, timestamp: now });
     return true;
   }
@@ -37,19 +35,17 @@ function checkRateLimit(ip: string): boolean {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  console.log('Received request:', req.method);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Received request:', req.method);
-    
-    // Get client IP
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
     
-    // Check rate limit
     if (!checkRateLimit(clientIP)) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
       return new Response(
         JSON.stringify({ 
           error: "Too many requests",
@@ -63,7 +59,7 @@ serve(async (req) => {
     }
 
     const { message } = await req.json();
-    console.log('Received message:', message);
+    console.log('Processing message:', message);
     
     if (!message) {
       throw new Error('No message provided');
@@ -98,19 +94,12 @@ serve(async (req) => {
 
     console.log(`Found ${products.length} verified products`);
 
-    let context = "";
-    try {
-      context = products
-        .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
-        .join('\n');
-      console.log('Context for OpenAI:', context); // Log the context being sent
-    } catch (contextError) {
-      console.error('Error creating context:', contextError);
-      throw contextError;
-    }
+    let context = products
+      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
+      .join('\n');
 
+    console.log('Generated context:', context);
 
-    console.log('Getting chat response...');
     const response = await getChatResponse(context, message);
     console.log('Got chat response successfully');
 
