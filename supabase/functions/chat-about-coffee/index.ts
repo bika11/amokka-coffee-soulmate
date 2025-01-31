@@ -11,7 +11,7 @@ const corsHeaders = {
 
 // Rate limiting configuration
 const WINDOW_MS = 60000; // 1 minute window
-const MAX_REQUESTS = 100; // Increased limit per window
+const MAX_REQUESTS = 30; // Requests per window
 const CLEANUP_INTERVAL = 300000; // Clean up every 5 minutes
 
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
