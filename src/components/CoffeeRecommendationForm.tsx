@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ProgressBar";
 import { FlavorSelector } from "@/components/FlavorSelector";
 import { RoastLevelSlider } from "@/components/RoastLevelSlider";
 import { DrinkStyleSelector } from "@/components/DrinkStyleSelector";
 import { BrewMethodSelector } from "@/components/BrewMethodSelector";
+import { FormStepWrapper } from "./recommendation-form/FormStepWrapper";
+import { LoadingState } from "./recommendation-form/LoadingState";
+import { Button } from "@/components/ui/button";
 import {
   type DrinkStyle,
   type BrewMethod,
   type FlavorNote,
-  type Coffee,
   FLAVOR_NOTES,
 } from "@/lib/coffee-data";
 
@@ -35,21 +36,15 @@ export const CoffeeRecommendationForm = ({
   const [brewMethod, setBrewMethod] = useState<BrewMethod | null>(null);
 
   useEffect(() => {
-    if (drinkStyle) {
-      setStep(2);
-    }
+    if (drinkStyle) setStep(2);
   }, [drinkStyle]);
 
   useEffect(() => {
-    if (selectedFlavors.length === 3) {
-      setStep(4);
-    }
+    if (selectedFlavors.length === 3) setStep(4);
   }, [selectedFlavors]);
 
   useEffect(() => {
-    if (brewMethod) {
-      handleSubmit();
-    }
+    if (brewMethod) handleSubmit();
   }, [brewMethod]);
 
   const handleFlavorToggle = (flavor: FlavorNote) => {
@@ -64,7 +59,6 @@ export const CoffeeRecommendationForm = ({
 
   const handleSubmit = () => {
     if (!drinkStyle || !brewMethod) return;
-    
     onGetRecommendation({
       drinkStyle,
       roastLevel,
@@ -74,6 +68,8 @@ export const CoffeeRecommendationForm = ({
   };
 
   const renderStep = () => {
+    if (isLoading) return <LoadingState />;
+
     switch (step) {
       case 1:
         return (
@@ -84,31 +80,25 @@ export const CoffeeRecommendationForm = ({
         );
       case 2:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              Select your preferred roast level
-            </h2>
+          <FormStepWrapper title="Select your preferred roast level">
             <RoastLevelSlider value={roastLevel} onChange={setRoastLevel} />
             <div className="flex justify-end">
               <Button onClick={() => setStep(3)}>Next</Button>
             </div>
-          </div>
+          </FormStepWrapper>
         );
       case 3:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">
-              Choose 2-3 flavor notes
-            </h2>
-            <p className="text-center text-muted-foreground">
-              Selected: {selectedFlavors.length}/3
-            </p>
+          <FormStepWrapper
+            title="Choose 2-3 flavor notes"
+            subtitle={`Selected: ${selectedFlavors.length}/3`}
+          >
             <FlavorSelector
               selectedFlavors={selectedFlavors}
               onFlavorToggle={handleFlavorToggle}
               availableFlavors={FLAVOR_NOTES}
             />
-          </div>
+          </FormStepWrapper>
         );
       case 4:
         return (
@@ -126,16 +116,7 @@ export const CoffeeRecommendationForm = ({
     <Card className="w-full max-w-lg p-6 space-y-6">
       <ProgressBar currentStep={step} totalSteps={4} />
       <div className="min-h-[300px] flex items-center justify-center">
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">
-              Getting your perfect match...
-            </p>
-          </div>
-        ) : (
-          renderStep()
-        )}
+        {renderStep()}
       </div>
     </Card>
   );
