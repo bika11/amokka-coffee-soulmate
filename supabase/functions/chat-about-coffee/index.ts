@@ -96,7 +96,7 @@ serve(async (req) => {
     console.log('Fetching products from database...');
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
-      .select('id, name, url, description')
+      .select('id, name, url, description, roast_level, flavor_notes, brewing_methods, origin, background, general_information')
       .limit(10);
 
     if (dbError) {
@@ -112,8 +112,18 @@ serve(async (req) => {
     console.log(`Found ${products.length} products`);
 
     let context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nProduct URL: ${p.url}\n`)
-      .join('\n');
+      .map(p => `
+Product: ${p.name}
+Description: ${p.description || 'No description available'}
+Background: ${p.background || 'No background information available'}
+General Information: ${p.general_information || 'No general information available'}
+Roast Level: ${p.roast_level || 'Not specified'}
+Flavor Notes: ${p.flavor_notes?.join(', ') || 'Not specified'}
+Brewing Methods: ${p.brewing_methods?.join(', ') || 'Not specified'}
+Origin: ${p.origin || 'Not specified'}
+Product URL: ${p.url}
+`)
+      .join('\n---\n');
 
     console.log('Generated context length:', context.length);
 
