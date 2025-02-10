@@ -1,65 +1,55 @@
-const SYSTEM_PROMPT = `You are a friendly and approachable coffee expert who helps customers learn about Amokka's coffee selection. Your goal is to make coffee knowledge accessible and engaging while maintaining strict accuracy.
 
-Key guidelines:
-- ONLY use information that is explicitly provided in the product data
-- DO NOT make assumptions or include details that aren't directly from the product database
-- If you're not sure about something, be honest and say you don't have that specific information
-- If asked about details not in the database, acknowledge the question and explain that you can only speak about the information available
-- Never invent or assume information about:
-  - Origins or sourcing details unless explicitly stated
-  - Processing methods unless specified
-  - Blend compositions unless provided
-  - Specific flavor notes not listed
-  - Brewing recommendations not mentioned
-  - Any technical details not in the product data
+const SYSTEM_PROMPT = `You are a friendly coffee expert chatbot for Amokka Coffee.
 
-When responding:
-- Use a warm, conversational tone
-- Break down complex coffee concepts into simple terms
-- Share information naturally, as if having a friendly chat
-- When mentioning specific products, include their URL as a clickable link in markdown format ([Product Name](URL))
-- Keep responses concise but engaging
-- Maintain context from previous messages in the conversation
+Important guidelines:
+- Use the provided product information to answer accurately
+- If discussing organic coffee, make sure to mention ALL organic options available
+- When mentioning specific products, provide their name and URL in markdown format: [Product Name](URL)
+- Keep responses conversational but informative
+- If you're not sure about specific details, say so rather than making assumptions
+- Format responses with proper spacing and line breaks for readability
 
-Available Products:
-`;
+You have access to detailed product information about Amokka's coffee selection. Use this to provide accurate recommendations and information to customers.`;
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export async function getChatResponse(context: string, message: string, history: ChatMessage[] = []) {
-  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-  
-  if (!geminiApiKey) {
-    console.error('Gemini API key is not configured');
+export async function getChatResponse(
+  context: string,
+  message: string,
+  history: ChatMessage[] = []
+): Promise<string> {
+  const apiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!apiKey) {
     throw new Error('Gemini API key is not configured');
   }
 
   try {
-    console.log('Starting chat response generation');
-    console.log('Context length:', context.length);
-    console.log('User message:', message);
-    console.log('Chat history:', history);
-    
-    // Convert history to Gemini-compatible format and ensure assistant->model conversion
+    console.log('Preparing Gemini request with:');
+    console.log('- Context length:', context.length);
+    console.log('- Message:', message);
+    console.log('- History length:', history.length);
+
+    // Format the conversation history for the model
     const formattedHistory = history.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
     }));
 
+    // Prepare the request to the Gemini API
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': geminiApiKey,
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
         contents: [
           {
             role: 'user',
-            parts: [{ text: SYSTEM_PROMPT + context }]
+            parts: [{ text: SYSTEM_PROMPT + '\n\nProduct Information:\n' + context }]
           },
           ...formattedHistory,
           {
@@ -68,8 +58,8 @@ export async function getChatResponse(context: string, message: string, history:
           }
         ],
         generationConfig: {
-          temperature: 0.7, // Slightly reduced temperature for more conservative responses
-          maxOutputTokens: 500,
+          temperature: 0.7,
+          maxOutputTokens: 800,
           topP: 0.8,
           topK: 40
         },
@@ -97,7 +87,7 @@ export async function getChatResponse(context: string, message: string, history:
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Gemini API error (${response.status}):`, errorText);
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -111,8 +101,6 @@ export async function getChatResponse(context: string, message: string, history:
     return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error('Error in getChatResponse:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Unknown error occurred'
-    );
+    throw error;
   }
 }
