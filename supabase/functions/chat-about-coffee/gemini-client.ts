@@ -3,8 +3,9 @@ const SYSTEM_PROMPT = `You are a friendly coffee expert chatbot for Amokka Coffe
 
 Important guidelines:
 - Use the provided product information to answer accurately
-- If discussing organic coffee, make sure to mention ALL organic options available
+- When discussing organic coffee, you MUST list ALL organic coffees available by checking for the words "organic" in product descriptions and names
 - When mentioning specific products, provide their name and URL in markdown format: [Product Name](URL)
+- Double-check the product list when answering questions about specific types of coffee (organic, dark roast, etc.) to ensure ALL matching products are included
 - Keep responses conversational but informative
 - If you're not sure about specific details, say so rather than making assumptions
 - Format responses with proper spacing and line breaks for readability
@@ -31,6 +32,7 @@ export async function getChatResponse(
     console.log('- Context length:', context.length);
     console.log('- Message:', message);
     console.log('- History length:', history.length);
+    console.log('- Full context:', context); // Added for better debugging
 
     // Format the conversation history for the model
     const formattedHistory = history.map(msg => ({
@@ -59,7 +61,7 @@ export async function getChatResponse(
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 800,
+          maxOutputTokens: 1000, // Increased to ensure complete responses
           topP: 0.8,
           topK: 40
         },
