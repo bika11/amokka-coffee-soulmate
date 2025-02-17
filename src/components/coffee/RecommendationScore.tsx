@@ -39,7 +39,7 @@ export const RecommendationScore = ({ matchScore }: RecommendationScoreProps) =>
         className="w-32 h-auto mb-2"
       />
       
-      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 animate-pulse">
+      <div className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10 animate-pulse p-2">
         <span className="text-3xl" role="img" aria-label="match quality">
         </span>
       </div>
