@@ -22,7 +22,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 15% 13%;
     
-    --primary: hsla(197 52% 60% / 0.6);
+    --primary: hsl(0 100% 50%);
     --primary-foreground: 222 15% 13%;
     
     --secondary: 240 5% 96%;
