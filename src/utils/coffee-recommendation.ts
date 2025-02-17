@@ -23,14 +23,14 @@ export const findRecommendedCoffee = (
     .map((coffee) => {
       let score = 0;
 
-      // Roast level matching (0-30 points) - Highest weight
+      // Roast level matching (0-25 points) - Highest weight
       const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
-      const roastScore = Math.max(0, 30 - roastDiff * 6); // Each level difference reduces score by 6
+      const roastScore = Math.max(0, 25 - roastDiff * 5); // Each level difference reduces score by 5
       score += roastScore;
 
-      // Flavor matching (0-15 points) - Medium weight
+      // Flavor matching (0-18 points) - Medium weight
       const flavorScore = selectedFlavors.reduce(
-        (acc, flavor) => acc + (coffee.flavorNotes.includes(flavor) ? 5 : 0),
+        (acc, flavor) => acc + (coffee.flavorNotes.includes(flavor) ? 6 : 0),
         0
       );
       score += flavorScore;
