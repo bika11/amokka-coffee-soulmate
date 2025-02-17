@@ -41,7 +41,6 @@ export const RecommendationScore = ({ matchScore }: RecommendationScoreProps) =>
       
       <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 animate-pulse">
         <span className="text-3xl" role="img" aria-label="match quality">
-          {matchQuality.icon}
         </span>
       </div>
       
