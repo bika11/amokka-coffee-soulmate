@@ -16,12 +16,14 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="h-screen flex flex-col">
-            <main className="flex-1 flex">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+          <div className="min-h-screen w-full flex flex-col">
+            <main className="flex-1 flex items-center justify-center p-4">
+              <div className="w-full max-w-7xl">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
               <ChatBot />
             </main>
           </div>

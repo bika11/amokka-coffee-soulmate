@@ -22,10 +22,25 @@ const calculateFlavorScore = (
 ): number => {
   if (!coffeeFlavorNotes || !userPreferredFlavors) return 0;
   
-  return userPreferredFlavors.reduce(
-    (score, flavor) => score + (coffeeFlavorNotes.includes(flavor) ? 5 : 0),
+  // Calculate matches between user preferences and coffee flavor notes
+  const matches = userPreferredFlavors.reduce(
+    (score, flavor) => score + (coffeeFlavorNotes.includes(flavor) ? 1 : 0),
     0
   );
+
+  // Calculate maximum possible matches based on coffee's flavor notes count
+  const coffeeNotesCount = coffeeFlavorNotes.length;
+  const maxPossibleMatches = Math.min(3, Math.max(2, coffeeNotesCount));
+  
+  // Calculate score (5 points per match, normalized to account for coffees with 2 notes)
+  const normalizedScore = (matches / maxPossibleMatches) * 15;
+  
+  // If coffee has 2 notes and matches both, give full score
+  if (coffeeNotesCount === 2 && matches === 2) {
+    return 15;
+  }
+  
+  return normalizedScore;
 };
 
 const calculateDrinkStyleScore = (
@@ -85,6 +100,7 @@ export const findBestCoffeeMatches = (
       name: coffee.name,
       totalScore,
       priority: coffee.priority,
+      flavorNotes: coffee.flavorNotes,
       ...details,
     }))
   );

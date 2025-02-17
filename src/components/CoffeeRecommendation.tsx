@@ -5,6 +5,7 @@ import { RecommendationScore } from "./coffee/RecommendationScore";
 import { CoffeeImage } from "./coffee/CoffeeImage";
 import { CoffeeDetails } from "./coffee/CoffeeDetails";
 import { ActionButtons } from "./coffee/ActionButtons";
+import { motion } from "framer-motion";
 
 interface CoffeeRecommendationProps {
   coffee: Coffee;
@@ -20,25 +21,35 @@ export const CoffeeRecommendation = ({
   const matchScore = Math.max(1, 10 - coffee.priority);
   
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-2xl mx-auto space-y-6"
+    >
       <RecommendationScore matchScore={matchScore} />
       
-      <Card className="p-8 shadow-xl bg-gradient-to-b from-white to-gray-50/50 backdrop-blur-sm min-h-[600px] border-2">
-        <CoffeeImage imageUrl={coffee.imageUrl} name={coffee.name} />
+      <Card className="overflow-hidden bg-white shadow-xl rounded-xl border-2">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+          <CoffeeImage imageUrl={coffee.imageUrl} name={coffee.name} />
+        </div>
         
-        <CoffeeDetails
-          name={coffee.name}
-          description={coffee.description}
-          flavorNotes={coffee.flavorNotes}
-        />
-        
-        <ActionButtons
-          url={coffee.url}
-          onTryAnother={onTryAnother}
-          onReset={onReset}
-        />
+        <div className="p-8 space-y-8">
+          <CoffeeDetails
+            name={coffee.name}
+            description={coffee.description}
+            flavorNotes={coffee.flavorNotes}
+          />
+          
+          <ActionButtons
+            url={coffee.url}
+            onTryAnother={onTryAnother}
+            onReset={onReset}
+          />
+        </div>
       </Card>
       <ChatBot />
-    </div>
+    </motion.div>
   );
 };

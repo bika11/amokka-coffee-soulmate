@@ -1,70 +1,87 @@
-const SYSTEM_PROMPT = `You are a coffee expert who helps customers learn about Amokka's coffee selection. Use the following product information to provide accurate and helpful responses. When mentioning specific products, always include their URL as a clickable link in markdown format ([Product Name](URL)). Only reference products mentioned in the context. If you don't have information about something, be honest about it. Keep your responses concise and friendly.
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
-Available Products:
-`;
+const SYSTEM_PROMPT = `You are a coffee expert who helps customers learn about Amokka's coffee selection. Your responses should be friendly, concise, and focused on helping customers find their perfect coffee match. When mentioning specific products, include their URL as a markdown link ([Product Name](URL)).
+
+Key guidelines:
+- Keep responses under 3-4 sentences when possible
+- Only reference products from the provided context
+- Be honest if you don't have information about something
+- Focus on being helpful and direct
+
+Available Products:`;
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3) {
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3,
+  baseDelay = 2000
+): Promise<Response> {
   let lastError;
-  let waitTime = 1000; // Start with 1 second
-
+  let currentResponse;
+  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      console.log(`Attempt ${attempt + 1} to call OpenAI API`);
-      const response = await fetch(url, options);
+      console.log(`OpenAI API call attempt ${attempt + 1}/${maxRetries}`);
       
-      if (response.status === 429) {
-        const errorData = await response.json();
-        console.log('Rate limit hit:', errorData);
-        const retryAfter = parseInt(response.headers.get('retry-after') || '20');
-        console.log(`Rate limited. Waiting ${retryAfter}s before retry...`);
-        await sleep(retryAfter * 1000);
+      currentResponse = await fetch(url, options);
+      const responseText = await currentResponse.text();
+      
+      try {
+        // Try to parse the response as JSON to check for API-level errors
+        const responseData = JSON.parse(responseText);
+        if (responseData.error) {
+          console.error('OpenAI API error:', responseData.error);
+          throw new Error(responseData.error.message || 'OpenAI API error');
+        }
+      } catch (parseError) {
+        // If it's not JSON or parsing fails, continue with the original response
+        if (!currentResponse.ok) {
+          throw new Error(`HTTP error! status: ${currentResponse.status}`);
+        }
+      }
+      
+      // If we got here, recreate the response with the body we already read
+      return new Response(responseText, currentResponse);
+      
+    } catch (error) {
+      lastError = error;
+      console.error(`Attempt ${attempt + 1} failed:`, error);
+      
+      if (currentResponse?.status === 429 || error.message?.includes('rate limit')) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`Rate limit hit, waiting ${delay}ms before retry...`);
+        await sleep(delay);
         continue;
       }
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`OpenAI API error (${response.status}):`, errorText);
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('OpenAI API response:', JSON.stringify(data, null, 2));
-
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format from OpenAI:', data);
-        throw new Error('Invalid response format from OpenAI API');
-      }
-
-      return data.choices[0].message.content;
-    } catch (error) {
-      console.error(`Attempt ${attempt + 1} failed:`, error);
-      lastError = error;
-      
+      // For other types of errors, use a shorter delay
       if (attempt < maxRetries - 1) {
-        console.log(`Waiting ${waitTime}ms before retry...`);
-        await sleep(waitTime);
-        waitTime *= 2; // Exponential backoff
+        const delay = 1000 * Math.pow(1.5, attempt);
+        console.log(`Error occurred, waiting ${delay}ms before retry...`);
+        await sleep(delay);
+        continue;
       }
     }
   }
-
-  throw lastError || new Error('Failed to get response from OpenAI API');
+  
+  console.error('All retry attempts failed. Last error:', lastError);
+  throw new Error('Failed to get a response from OpenAI after multiple attempts. Please try again later.');
 }
 
-export async function getChatResponse(context: string, message: string) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  
-  if (!openAIApiKey) {
-    console.error('OpenAI API key is not configured');
-    throw new Error('OpenAI API key is not configured');
+export async function getChatResponse(context: string, message: string): Promise<string> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (!OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured');
   }
 
+  const url = 'https://api.openai.com/v1/chat/completions';
+  
   try {
-    console.log('Starting chat response generation');
+    console.log('Starting chat response generation...');
     console.log('Context length:', context.length);
     console.log('User message:', message);
     
@@ -73,38 +90,44 @@ export async function getChatResponse(context: string, message: string) {
       messages: [
         {
           role: 'system',
-          content: SYSTEM_PROMPT + context
+          content: SYSTEM_PROMPT + '\n\n' + context
         },
-        { role: 'user', content: message }
+        { 
+          role: 'user', 
+          content: message 
+        }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 300,
     };
 
-    console.log('OpenAI Request:', JSON.stringify(requestBody, null, 2));
+    console.log('Making OpenAI request...');
 
     const response = await fetchWithRetry(
-      'https://api.openai.com/v1/chat/completions',
+      url,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       }
     );
 
+    const data = await response.json();
+    
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Unexpected OpenAI response format:', data);
+      throw new Error('Invalid response from OpenAI');
+    }
+
+    const generatedResponse = data.choices[0].message.content;
     console.log('Successfully generated response');
-    return response;
+    return generatedResponse;
 
   } catch (error) {
     console.error('Error in getChatResponse:', error);
-    if (error.message?.includes('rate limit')) {
-      throw new Error('We are experiencing high traffic. Please try again in a few seconds.');
-    }
-    throw new Error(
-      error instanceof Error ? error.message : 'Unknown error occurred'
-    );
+    throw error;
   }
 }

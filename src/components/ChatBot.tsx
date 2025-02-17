@@ -42,12 +42,18 @@ export const ChatBot = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
-        body: { message: userMessage },
+        body: { 
+          message: userMessage,
+          history: messages.map(msg => ({
+            role: msg.isUser ? 'user' : 'assistant',
+            content: msg.content
+          }))
+        },
       });
 
       if (error) {
-        if (error.message?.includes('rate limit')) {
-          throw new Error('We are experiencing high traffic. Please try again in a few seconds.');
+        if (error.message?.includes('high traffic')) {
+          throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
         }
         throw error;
       }

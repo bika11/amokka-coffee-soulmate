@@ -9,9 +9,22 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Rate limiting configuration
+const WINDOW_MS = 60000; // 1 minute window
+const MAX_REQUESTS = 30; // Requests per window
+const CLEANUP_INTERVAL = 300000; // Clean up every 5 minutes
+
 const ipRequests = new Map<string, { count: number; timestamp: number }>();
-const WINDOW_MS = 60000; // 1 minute
-const MAX_REQUESTS = 10; // Increased to 10 requests per minute since Gemini has higher rate limits
+
+// Cleanup old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of ipRequests.entries()) {
+    if (now - data.timestamp > WINDOW_MS) {
+      ipRequests.delete(ip);
+    }
+  }
+}, CLEANUP_INTERVAL);
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -38,7 +51,6 @@ function checkRateLimit(ip: string): boolean {
 serve(async (req) => {
   console.log('Received request:', req.method);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,
@@ -48,6 +60,7 @@ serve(async (req) => {
 
   try {
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
+    console.log('Client IP:', clientIP);
     
     if (!checkRateLimit(clientIP)) {
       console.log(`Rate limit exceeded for IP: ${clientIP}`);
@@ -63,8 +76,9 @@ serve(async (req) => {
       );
     }
 
-    const { message } = await req.json();
+    const { message, history = [] } = await req.json();
     console.log('Processing message:', message);
+    console.log('Chat history:', history);
     
     if (!message) {
       throw new Error('No message provided');
@@ -83,9 +97,8 @@ serve(async (req) => {
     console.log('Fetching products from database...');
     const { data: products, error: dbError } = await supabase
       .from('amokka_products')
-      .select('*')
-      .eq('is_verified', true)
-      .limit(5);
+      .select('id, name, url, description, roast_level, flavor_notes, brewing_methods, origin, background, general_information')
+      .limit(10);
 
     if (dbError) {
       console.error('Database error:', dbError);
@@ -93,19 +106,29 @@ serve(async (req) => {
     }
 
     if (!products || products.length === 0) {
-      console.warn('No verified products found');
-      throw new Error('No verified products found in the database');
+      console.warn('No products found');
+      throw new Error('No products found in the database');
     }
 
-    console.log(`Found ${products.length} verified products`);
+    console.log(`Found ${products.length} products`);
 
     let context = products
-      .map(p => `Product: ${p.name}\nDescription: ${p.description}\nRoast Level: ${p.roast_level}\nFlavor Notes: ${p.flavor_notes.join(', ')}\nBrewing Methods: ${p.brewing_methods.join(', ')}\nOrigin: ${p.origin || 'Unknown'}\nProduct URL: ${p.url}\n\n`)
-      .join('\n');
+      .map(p => `
+Product: ${p.name}
+Description: ${p.description || 'No description available'}
+Background: ${p.background || 'No background information available'}
+General Information: ${p.general_information || 'No general information available'}
+Roast Level: ${p.roast_level || 'Not specified'}
+Flavor Notes: ${p.flavor_notes?.join(', ') || 'Not specified'}
+Brewing Methods: ${p.brewing_methods?.join(', ') || 'Not specified'}
+Origin: ${p.origin || 'Not specified'}
+Product URL: ${p.url}
+`)
+      .join('\n---\n');
 
-    console.log('Generated context:', context);
+    console.log('Generated context length:', context.length);
 
-    const response = await getChatResponse(context, message);
+    const response = await getChatResponse(context, message, history);
     console.log('Got chat response successfully');
 
     return new Response(
@@ -118,6 +141,20 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
+    
+    if (error.message?.includes('Too many requests')) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Rate limit exceeded",
+          details: "Please wait a minute before trying again"
+        }),
+        { 
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error occurred',
