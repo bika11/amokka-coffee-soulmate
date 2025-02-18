@@ -100,7 +100,7 @@ export const CoffeeRecommendation = ({
           </div>
         </div>
       </Card>
-      <ChatBot />
+      <ChatBot currentCoffee={coffee} />
     </motion.div>
   );
 };
