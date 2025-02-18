@@ -114,7 +114,7 @@ serve(async (req) => {
 
     // Fetch coffee data to provide as context
     const { data: coffees } = await supabase
-      .from('coffees')
+      .from('amokka_products')
       .select('*');
 
     if (!coffees) {
@@ -144,9 +144,10 @@ URL: ${coffee.product_link}
 
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: errorMessage,
         details: 'An error occurred while processing your request.'
       }),
       { 
