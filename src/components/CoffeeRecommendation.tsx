@@ -30,24 +30,7 @@ export const CoffeeRecommendation = ({
       transition={{ duration: 0.5 }}
       className="w-full max-w-4xl mx-auto space-y-6"
     >
-      <div className="flex items-center justify-between">
-        <RecommendationScore matchScore={matchScore} />
-        <Button
-          variant="ghost"
-          size="icon"
-          asChild
-          className="rounded-full hover:bg-primary/10 text-primary"
-        >
-          <a
-            href="https://www.instagram.com/amokkacoffee/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Follow us on Instagram"
-          >
-            <Instagram className="w-5 h-5" />
-          </a>
-        </Button>
-      </div>
+      <RecommendationScore matchScore={matchScore} />
       
       <Card className="overflow-hidden bg-white shadow-xl rounded-xl border-2">
         <div className="relative">
@@ -62,11 +45,30 @@ export const CoffeeRecommendation = ({
             flavorNotes={coffee.flavorNotes}
           />
           
-          <ActionButtons
-            url={coffee.url}
-            onTryAnother={onTryAnother}
-            onReset={onReset}
-          />
+          <div className="space-y-4">
+            <ActionButtons
+              url={coffee.url}
+              onTryAnother={onTryAnother}
+              onReset={onReset}
+            />
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="rounded-full hover:bg-primary/10 text-primary"
+              >
+                <a
+                  href="https://www.instagram.com/amokkacoffee/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on Instagram"
+                >
+                  <Instagram className="w-5 h-5" />
+                </a>
+              </Button>
+            </div>
+          </div>
         </div>
       </Card>
       <ChatBot />
