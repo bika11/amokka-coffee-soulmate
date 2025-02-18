@@ -9,6 +9,8 @@ import { ActionButtons } from "./coffee/ActionButtons";
 import { motion } from "framer-motion";
 import { Instagram } from "lucide-react";
 import { Button } from "./ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "./ui/use-toast";
 
 interface CoffeeRecommendationProps {
   coffee: Coffee;
@@ -22,6 +24,32 @@ export const CoffeeRecommendation = ({
   onTryAnother,
 }: CoffeeRecommendationProps) => {
   const matchScore = Math.max(1, 10 - coffee.priority);
+  const { toast } = useToast();
+
+  const trackCoffeeClick = async (coffeeName: string) => {
+    try {
+      const { error } = await supabase
+        .from('coffee_clicks')
+        .insert([{ coffee_name: coffeeName }]);
+
+      if (error) throw error;
+      
+      // Optional: Log successful tracking
+      console.log(`Click tracked for coffee: ${coffeeName}`);
+    } catch (error) {
+      console.error('Error tracking coffee click:', error);
+      toast({
+        title: "Error",
+        description: "Failed to track coffee interaction",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCoffeeClick = (url: string) => {
+    trackCoffeeClick(coffee.name);
+    window.open(url, '_blank');
+  };
   
   return (
     <motion.div 
@@ -50,6 +78,7 @@ export const CoffeeRecommendation = ({
               url={coffee.url}
               onTryAnother={onTryAnother}
               onReset={onReset}
+              onBuyClick={() => handleCoffeeClick(coffee.url)}
             />
             <div className="flex justify-end">
               <Button

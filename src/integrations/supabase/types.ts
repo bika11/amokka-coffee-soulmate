@@ -129,6 +129,27 @@ export type Database = {
         }
         Relationships: []
       }
+      coffee_clicks: {
+        Row: {
+          coffee_name: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          coffee_name: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          coffee_name?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       coffee_recommendations: {
         Row: {
           created_at: string | null
