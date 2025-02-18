@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,9 +17,9 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen w-full flex flex-col">
-            <main className="flex-1 flex items-center justify-center p-4">
-              <div className="w-full max-w-7xl">
+          <div className="w-full min-h-[inherit] flex flex-col">
+            <main className="flex-1 w-full flex items-start justify-center p-4">
+              <div className="w-full">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="*" element={<NotFound />} />
