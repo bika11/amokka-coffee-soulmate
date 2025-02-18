@@ -18,7 +18,7 @@ const Index = () => {
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="w-full flex items-center justify-center p-4 min-h-screen bg-gradient-to-br from-background to-muted">
+    <div className="w-full flex items-center justify-center p-4 min-h-screen">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {currentCoffee ? (
           <CoffeeRecommendation
@@ -41,6 +41,16 @@ const Index = () => {
             }}
             className="text-center space-y-8 max-w-2xl mx-auto bg-card/50 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-border/50"
           >
+            <div className="flex justify-center mb-6">
+              <motion.img
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                src="/amokka-og.png"
+                alt="Amokka Logo"
+                className="h-24 w-auto"
+              />
+            </div>
             <h1 className="text-4xl font-medium leading-tight tracking-tighter">
               Take the quiz and let us introduce you to your perfect coffee match.
             </h1>
