@@ -136,6 +136,7 @@ export type Database = {
           input_preferences: string
           rating: number | null
           recommendation: string
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -144,6 +145,7 @@ export type Database = {
           input_preferences: string
           rating?: number | null
           recommendation: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -152,6 +154,7 @@ export type Database = {
           input_preferences?: string
           rating?: number | null
           recommendation?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -237,6 +240,13 @@ export type Database = {
             foreignKeyName: "user_interactions_recommended_coffee_id_fkey"
             columns: ["recommended_coffee_id"]
             isOneToOne: false
+            referencedRelation: "active_coffees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_interactions_recommended_coffee_id_fkey"
+            columns: ["recommended_coffee_id"]
+            isOneToOne: false
             referencedRelation: "coffees"
             referencedColumns: ["id"]
           },
@@ -244,7 +254,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_coffees: {
+        Row: {
+          description: string | null
+          flavor_notes: string[] | null
+          id: string | null
+          image_link: string | null
+          interaction_count: number | null
+          name: string | null
+          priority: number | null
+          product_link: string | null
+          roast_level: Database["public"]["Enums"]["roast_level"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
