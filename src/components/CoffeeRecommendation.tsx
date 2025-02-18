@@ -43,6 +43,7 @@ export const CoffeeRecommendation = ({
             name={coffee.name}
             description={coffee.description}
             flavorNotes={coffee.flavorNotes}
+            colorScheme={coffee.colorScheme}
           />
           
           <div className="space-y-4">
