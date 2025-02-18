@@ -1,5 +1,4 @@
 
-
 const SYSTEM_PROMPT = `You are a friendly coffee expert chatbot for Amokka Coffee.
 
 Important guidelines:
