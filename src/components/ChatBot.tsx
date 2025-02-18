@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,18 +7,13 @@ import { ChatInput } from "./chat/ChatInput";
 import { ChatHeader } from "./chat/ChatHeader";
 import { ChatButton } from "./chat/ChatButton";
 import { LoadingDots } from "./chat/LoadingDots";
-import { Coffee } from "@/lib/coffee-data";
 
 interface Message {
   content: string;
   isUser: boolean;
 }
 
-interface ChatBotProps {
-  currentCoffee?: Coffee;
-}
-
-export const ChatBot = ({ currentCoffee }: ChatBotProps) => {
+export const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -28,13 +22,9 @@ export const ChatBot = ({ currentCoffee }: ChatBotProps) => {
 
   const handleToggleChat = () => {
     if (!isOpen) {
-      const initialMessage = currentCoffee
-        ? `Hi! I'm your coffee expert. I see you're interested in ${currentCoffee.name}. Would you like to know more about its flavor profile, roast level, or brewing recommendations?`
-        : "Hi! I'm your coffee expert. I can help you learn about our coffees and find the perfect match for your taste. What would you like to know?";
-
       setMessages([
         {
-          content: initialMessage,
+          content: "Hi! I'm your coffee expert. I can help you learn about our coffees and find the perfect match for your taste. What would you like to know?",
           isUser: false,
         },
       ]);
@@ -54,7 +44,6 @@ export const ChatBot = ({ currentCoffee }: ChatBotProps) => {
       const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
         body: { 
           message: userMessage,
-          currentCoffee: currentCoffee?.name,
           history: messages.map(msg => ({
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.content
