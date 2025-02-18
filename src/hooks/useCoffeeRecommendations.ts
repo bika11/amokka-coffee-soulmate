@@ -32,6 +32,13 @@ export const useCoffeeRecommendations = () => {
   }: CoffeePreferences) => {
     setIsLoading(true);
     try {
+      console.log('Calling Edge Function with preferences:', {
+        drinkStyle,
+        roastLevel,
+        selectedFlavors,
+        brewMethod,
+      });
+
       const { data: recommendationsData, error } = await supabase.functions.invoke(
         "get-coffee-recommendations",
         {
@@ -42,17 +49,23 @@ export const useCoffeeRecommendations = () => {
               selectedFlavors,
               brewMethod,
             }
-          },
+          }
         }
       );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
+      }
+
+      console.log('Received recommendations:', recommendationsData);
 
       const recommendedCoffees = recommendationsData.recommendations
         .map((rec: any) => COFFEES.find(c => c.name === rec.name))
         .filter(Boolean);
 
       if (recommendedCoffees.length === 0) {
+        console.log('No recommendations received, using fallback');
         // Fallback to local recommendations if no ML recommendations
         const topMatches = findBestCoffeeMatches(
           COFFEES,
@@ -62,6 +75,7 @@ export const useCoffeeRecommendations = () => {
         ).slice(0, 2);
         setRecommendations(topMatches);
       } else {
+        console.log('Setting recommendations:', recommendedCoffees);
         setRecommendations(recommendedCoffees);
       }
       setCurrentIndex(0);

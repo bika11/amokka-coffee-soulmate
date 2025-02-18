@@ -102,8 +102,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseClient = createClient(
+    // Initialize Supabase admin client
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
@@ -111,17 +111,24 @@ Deno.serve(async (req) => {
     // Get request body
     const { userPreferences } = await req.json();
 
+    console.log('Received user preferences:', userPreferences);
+
     // Fetch all active coffees
-    const { data: coffees, error: fetchError } = await supabaseClient
+    const { data: coffees, error: fetchError } = await supabaseAdmin
       .from('coffees')
       .select('*');
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      console.error('Error fetching coffees:', fetchError);
+      throw fetchError;
+    }
+
+    console.log(`Found ${coffees?.length ?? 0} coffees`);
 
     // Calculate hybrid scores
     const predictions = await Promise.all(coffees.map(async (coffee: Coffee) => {
       const contentScore = calculateContentSimilarity(userPreferences, coffee);
-      const collaborativeScore = await calculateCollaborativeScore(coffee.name, userPreferences, supabaseClient);
+      const collaborativeScore = await calculateCollaborativeScore(coffee.name, userPreferences, supabaseAdmin);
       
       // Hybrid score: 70% content-based, 30% collaborative
       const hybridScore = (contentScore * 0.7) + (collaborativeScore * 0.3);
@@ -129,17 +136,20 @@ Deno.serve(async (req) => {
       return {
         coffee_name: coffee.name,
         prediction_score: hybridScore,
-        user_id: null, // Remove user_id requirement since we don't need it for anonymous recommendations
+        user_id: null,
         model_version: '2.0.0-hybrid'
       };
     }));
 
     // Store predictions
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await supabaseAdmin
       .from('model_predictions')
       .upsert(predictions);
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('Error inserting predictions:', insertError);
+      throw insertError;
+    }
 
     // Return top recommendations
     const sortedCoffees = coffees
@@ -150,6 +160,8 @@ Deno.serve(async (req) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
 
+    console.log('Returning recommendations:', sortedCoffees.map(c => c.name));
+
     return new Response(
       JSON.stringify({ recommendations: sortedCoffees }),
       {
@@ -158,7 +170,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in get-coffee-recommendations:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
