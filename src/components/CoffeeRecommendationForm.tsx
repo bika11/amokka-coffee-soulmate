@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -66,11 +67,14 @@ export const CoffeeRecommendationForm = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-lg mx-auto"
+      className="w-full max-w-lg mx-auto px-4 sm:px-0"
     >
       <Card className="overflow-hidden bg-white shadow-xl rounded-xl border-2">
-        <div className="p-6 space-y-8">
-          <ProgressBar currentStep={step} totalSteps={4} />
+        <div className="p-4 sm:p-6 space-y-8">
+          <header>
+            <h1 className="sr-only">Coffee Recommendation Quiz</h1>
+            <ProgressBar currentStep={step} totalSteps={4} />
+          </header>
           <div className="min-h-[300px] flex items-center justify-center">
             <FormSteps
               step={step}
