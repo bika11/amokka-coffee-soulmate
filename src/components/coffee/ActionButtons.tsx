@@ -26,7 +26,7 @@ export const ActionButtons = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
+    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
       <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
         <Button 
           className="flex-1 w-full transition-all duration-200" 
