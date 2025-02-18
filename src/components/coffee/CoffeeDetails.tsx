@@ -1,3 +1,4 @@
+
 interface CoffeeDetailsProps {
   name: string;
   description: string;
@@ -14,18 +15,6 @@ export const CoffeeDetails = ({ name, description, flavorNotes }: CoffeeDetailsP
         <p className="text-muted-foreground leading-relaxed mx-auto max-w-prose text-lg">
           {description}
         </p>
-      </div>
-      
-      <div className="flex flex-wrap gap-3 justify-center">
-        {flavorNotes.map((note) => (
-          <span
-            key={note}
-            className="px-4 py-2 bg-primary/10 text-primary-foreground rounded-full text-sm font-medium 
-                      hover:bg-primary/20 transition-colors duration-200 cursor-default"
-          >
-            {note}
-          </span>
-        ))}
       </div>
     </div>
   );
