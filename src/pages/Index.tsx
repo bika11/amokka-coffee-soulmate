@@ -1,4 +1,3 @@
-
 import { useCoffeeRecommendations } from "@/hooks/useCoffeeRecommendations";
 import { CoffeeRecommendationForm } from "@/components/CoffeeRecommendationForm";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
@@ -13,8 +12,8 @@ const Index = () => {
   } = useCoffeeRecommendations();
 
   return (
-    <div className="w-full flex items-start justify-center">
-      <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full flex items-center justify-center p-4">
+      <div className="w-full max-w-7xl mx-auto">
         {currentCoffee ? (
           <CoffeeRecommendation
             coffee={currentCoffee}
