@@ -1,6 +1,13 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.1'
 import { corsHeaders } from '../_shared/cors.ts'
+
+interface Coffee {
+  name: string;
+  description: string;
+  roastLevel: string;
+  flavorNotes: string[];
+}
 
 interface UserPreferences {
   drinkStyle: string;
@@ -9,33 +16,23 @@ interface UserPreferences {
   brewMethod: string;
 }
 
-interface Coffee {
-  name: string;
-  roast_level: string;
-  flavor_notes: string[];
-  priority: number;
-}
-
-// Content-based similarity calculation
 function calculateContentSimilarity(
   userPreferences: UserPreferences,
   coffee: Coffee
 ): number {
   let score = 0;
 
-  // Roast level similarity (0-5 scale)
-  const roastLevels = ['light', 'medium-light', 'medium', 'medium-dark', 'dark'];
-  const coffeeRoastIndex = roastLevels.indexOf(coffee.roast_level.toLowerCase());
-  if (coffeeRoastIndex !== -1) {
-    const userRoastIndex = Math.max(0, Math.min(4, userPreferences.roastLevel - 1));
-    score += 1 - (Math.abs(coffeeRoastIndex - userRoastIndex) / 4);
-  }
+  // Roast level matching (0-4 scale)
+  const roastLevels = { LIGHT: 1, MEDIUM: 2, MEDIUM_DARK: 3, DARK: 4 };
+  const coffeeRoastLevel = roastLevels[coffee.roastLevel as keyof typeof roastLevels] || 2;
+  const roastDiff = Math.abs(coffeeRoastLevel - userPreferences.roastLevel);
+  score += 1 - (roastDiff / 4);
 
-  // Flavor notes similarity
-  const flavorMatch = coffee.flavor_notes.filter(note => 
-    userPreferences.selectedFlavors.includes(note.toLowerCase())
+  // Flavor notes matching
+  const flavorMatch = coffee.flavorNotes.filter(note =>
+    userPreferences.selectedFlavors.includes(note)
   ).length;
-  score += flavorMatch / Math.max(userPreferences.selectedFlavors.length, coffee.flavor_notes.length);
+  score += flavorMatch / Math.max(userPreferences.selectedFlavors.length, coffee.flavorNotes.length);
 
   return score / 2; // Normalize to 0-1 range
 }
@@ -43,34 +40,47 @@ function calculateContentSimilarity(
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Initialize Supabase admin client
+    // Get the JWT token from the Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    // Create Supabase client with admin privileges
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
-    // Get request body
+    // Get user ID from JWT token
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
+    
+    if (userError || !user) {
+      throw new Error('Invalid user token');
+    }
+
     const { userPreferences } = await req.json();
 
-    console.log('Received user preferences:', userPreferences);
-
-    // Fetch all active coffees
-    const { data: coffees, error: fetchError } = await supabaseAdmin
+    // Get all coffees
+    const { data: coffees, error: dbError } = await supabaseAdmin
       .from('coffees')
       .select('*');
 
-    if (fetchError) {
-      console.error('Error fetching coffees:', fetchError);
-      throw fetchError;
-    }
+    if (dbError) throw dbError;
 
     console.log(`Found ${coffees?.length ?? 0} coffees`);
 
-    // Calculate content-based scores
+    // Calculate content-based scores and store user interaction
     const recommendations = coffees
       .map((coffee: Coffee) => ({
         ...coffee,
@@ -78,6 +88,16 @@ Deno.serve(async (req) => {
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
+
+    // Store user interaction
+    await supabaseAdmin
+      .from('user_interactions')
+      .insert({
+        user_id: user.id,
+        selected_roast_level: userPreferences.roastLevel,
+        selected_flavors: userPreferences.selectedFlavors,
+        selected_brew_method: userPreferences.brewMethod
+      });
 
     console.log('Returning recommendations:', recommendations.map(c => c.name));
 
@@ -89,7 +109,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in get-coffee-recommendations:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

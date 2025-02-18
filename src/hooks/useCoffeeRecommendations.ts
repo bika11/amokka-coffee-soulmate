@@ -39,6 +39,18 @@ export const useCoffeeRecommendations = () => {
         brewMethod,
       });
 
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw sessionError;
+      }
+
+      if (!session?.access_token) {
+        throw new Error('No active session');
+      }
+
       const { data: recommendationsData, error } = await supabase.functions.invoke(
         "get-coffee-recommendations",
         {
@@ -49,6 +61,9 @@ export const useCoffeeRecommendations = () => {
               selectedFlavors,
               brewMethod,
             }
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
           }
         }
       );
