@@ -96,26 +96,27 @@ async function calculateCollaborativeScore(
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
+    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
     // Get request body
-    const { userPreferences } = await req.json()
-    const userId = req.headers.get('authorization')?.split('Bearer ')[1]
+    const { userPreferences } = await req.json();
 
     // Fetch all active coffees
     const { data: coffees, error: fetchError } = await supabaseClient
       .from('coffees')
-      .select('*')
+      .select('*');
 
-    if (fetchError) throw fetchError
+    if (fetchError) throw fetchError;
 
     // Calculate hybrid scores
     const predictions = await Promise.all(coffees.map(async (coffee: Coffee) => {
@@ -128,7 +129,7 @@ Deno.serve(async (req) => {
       return {
         coffee_name: coffee.name,
         prediction_score: hybridScore,
-        user_id: userId,
+        user_id: null, // Remove user_id requirement since we don't need it for anonymous recommendations
         model_version: '2.0.0-hybrid'
       };
     }));
@@ -136,9 +137,9 @@ Deno.serve(async (req) => {
     // Store predictions
     const { error: insertError } = await supabaseClient
       .from('model_predictions')
-      .upsert(predictions)
+      .upsert(predictions);
 
-    if (insertError) throw insertError
+    if (insertError) throw insertError;
 
     // Return top recommendations
     const sortedCoffees = coffees
@@ -147,23 +148,23 @@ Deno.serve(async (req) => {
         score: predictions.find(p => p.coffee_name === coffee.name)?.prediction_score ?? 0
       }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
+      .slice(0, 5);
 
     return new Response(
       JSON.stringify({ recommendations: sortedCoffees }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
-      },
-    )
+      }
+    );
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
-      },
-    )
+      }
+    );
   }
-})
+});
