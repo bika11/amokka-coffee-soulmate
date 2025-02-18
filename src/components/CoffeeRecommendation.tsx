@@ -1,3 +1,4 @@
+
 import { Coffee } from "@/lib/coffee-data";
 import { Card } from "@/components/ui/card";
 import { ChatBot } from "./ChatBot";
@@ -6,6 +7,8 @@ import { CoffeeImage } from "./coffee/CoffeeImage";
 import { CoffeeDetails } from "./coffee/CoffeeDetails";
 import { ActionButtons } from "./coffee/ActionButtons";
 import { motion } from "framer-motion";
+import { Instagram } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface CoffeeRecommendationProps {
   coffee: Coffee;
@@ -27,7 +30,24 @@ export const CoffeeRecommendation = ({
       transition={{ duration: 0.5 }}
       className="w-full max-w-4xl mx-auto space-y-6"
     >
-      <RecommendationScore matchScore={matchScore} />
+      <div className="flex items-center justify-between">
+        <RecommendationScore matchScore={matchScore} />
+        <Button
+          variant="ghost"
+          size="icon"
+          asChild
+          className="rounded-full hover:bg-primary/10 text-primary"
+        >
+          <a
+            href="https://www.instagram.com/amokkacoffee/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Follow us on Instagram"
+          >
+            <Instagram className="w-5 h-5" />
+          </a>
+        </Button>
+      </div>
       
       <Card className="overflow-hidden bg-white shadow-xl rounded-xl border-2">
         <div className="relative">
