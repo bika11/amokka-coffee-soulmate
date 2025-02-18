@@ -59,13 +59,15 @@ const Index = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.4 }}
             >
-              <Button 
-                size="lg"
-                onClick={() => setShowForm(true)}
-                className="text-lg px-8 py-6 h-auto bg-primary hover:bg-primary/90 transition-colors"
-              >
-                Take the quiz
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+                <Button 
+                  size="lg"
+                  onClick={() => setShowForm(true)}
+                  className="text-lg px-8 py-6 h-auto bg-primary hover:bg-primary/90 transition-all duration-200"
+                >
+                  Take the quiz
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
