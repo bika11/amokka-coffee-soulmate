@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Redo } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ActionButtonsProps {
   url: string;
@@ -26,31 +27,37 @@ export const ActionButtons = ({
 
   return (
     <div className="flex flex-col sm:flex-row gap-4">
-      <Button 
-        className="flex-1" 
-        size="lg"
-        onClick={handleBuyClick}
-      >
-        Buy Now
-        <ExternalLink className="ml-2 h-4 w-4" />
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        onClick={onTryAnother}
-        className="flex-1"
-      >
-        Try Another
-        <Redo className="ml-2 h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="lg"
-        onClick={onReset}
-        className="flex-1"
-      >
-        Start Over
-      </Button>
+      <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+        <Button 
+          className="flex-1 w-full transition-all duration-200" 
+          size="lg"
+          onClick={handleBuyClick}
+        >
+          Buy Now
+          <ExternalLink className="ml-2 h-4 w-4" />
+        </Button>
+      </motion.div>
+      <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={onTryAnother}
+          className="flex-1 w-full transition-all duration-200"
+        >
+          Try Another
+          <Redo className="ml-2 h-4 w-4" />
+        </Button>
+      </motion.div>
+      <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={onReset}
+          className="flex-1 w-full transition-all duration-200"
+        >
+          Start Over
+        </Button>
+      </motion.div>
     </div>
   );
 };
