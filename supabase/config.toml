@@ -1,7 +1,4 @@
-project_id = "htgacpgppyjonzwkkntl"
 
-[functions.get-coffee-recommendation]
-verify_jwt = false
-
-[functions.chat-about-coffee]
-verify_jwt = false
+[htgacpgppyjonzwkkntl]
+[htgacpgppyjonzwkkntl.functions]
+get-coffee-recommendations = {}

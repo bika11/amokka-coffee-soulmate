@@ -228,6 +228,33 @@ export type Database = {
         }
         Relationships: []
       }
+      model_predictions: {
+        Row: {
+          coffee_name: string
+          created_at: string
+          id: string
+          model_version: string
+          prediction_score: number
+          user_id: string | null
+        }
+        Insert: {
+          coffee_name: string
+          created_at?: string
+          id?: string
+          model_version: string
+          prediction_score: number
+          user_id?: string | null
+        }
+        Update: {
+          coffee_name?: string
+          created_at?: string
+          id?: string
+          model_version?: string
+          prediction_score?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_interactions: {
         Row: {
           created_at: string
@@ -291,7 +318,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      clean_old_predictions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       roast_level: "light" | "medium-light" | "medium" | "medium-dark" | "dark"
