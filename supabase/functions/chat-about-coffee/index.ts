@@ -19,7 +19,7 @@ serve(async (req) => {
     console.log('Chat history:', history);
 
     // For now, return a simple response - we can enhance this later with AI integration
-    const response = "Thank you for your question! I can help you learn more about our coffee selection. What would you like to know specifically - flavor profiles, roast levels, or brewing recommendations?";
+    const response = "I'd be happy to help you learn more about our coffee selection! Would you like to know about specific flavor profiles, roast levels, or brewing recommendations?";
 
     return new Response(
       JSON.stringify({ response }),
