@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +9,7 @@ import {
   type BrewMethod,
   type FlavorNote,
 } from "@/lib/coffee-data";
-import { findBestCoffeeMatches } from "@/utils/coffee-scoring";
+import { findBestCoffeeMatches } from "@/utils/coffee-recommendation";
 
 interface CoffeePreferences {
   drinkStyle: DrinkStyle;

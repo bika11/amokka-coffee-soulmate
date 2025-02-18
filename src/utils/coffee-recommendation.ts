@@ -2,8 +2,8 @@ import { Coffee, DrinkStyle, FlavorNote } from "@/lib/coffee-data";
 
 interface CoffeeScore {
   coffee: Coffee;
-  score: number;
-  debug: {
+  totalScore: number;
+  details: {
     roastScore: number;
     flavorScore: number;
     drinkStyleScore: number;
@@ -11,63 +11,100 @@ interface CoffeeScore {
   };
 }
 
-export const findRecommendedCoffee = (
-  coffees: Coffee[],
-  drinkStyle: DrinkStyle,
-  roastLevel: number,
-  selectedFlavors: FlavorNote[],
-  excludeCoffee?: Coffee
-): Coffee => {
-  const coffeeScores: CoffeeScore[] = coffees
-    .filter((coffee) => !excludeCoffee || coffee.name !== excludeCoffee.name)
-    .map((coffee) => {
-      let score = 0;
+const calculateRoastScore = (coffeeRoastLevel: number, userRoastLevel: number): number => {
+  const roastDifference = Math.abs(coffeeRoastLevel - userRoastLevel);
+  return Math.max(0, 30 - roastDifference * 6);
+};
 
-      // Roast level matching (0-25 points) - Highest weight
-      const roastDiff = Math.abs(coffee.roastLevel - roastLevel);
-      const roastScore = Math.max(0, 25 - roastDiff * 5); // Each level difference reduces score by 5
-      score += roastScore;
+const calculateFlavorScore = (
+  coffeeFlavorNotes: FlavorNote[],
+  userPreferredFlavors: FlavorNote[]
+): number => {
+  if (!coffeeFlavorNotes || !userPreferredFlavors) return 0;
+  
+  // Calculate matches between user preferences and coffee flavor notes
+  const matches = userPreferredFlavors.reduce(
+    (score, flavor) => score + (coffeeFlavorNotes.includes(flavor) ? 1 : 0),
+    0
+  );
 
-      // Flavor matching (0-18 points) - Medium weight
-      const flavorScore = selectedFlavors.reduce(
-        (acc, flavor) => acc + (coffee.flavorNotes.includes(flavor) ? 6 : 0),
-        0
-      );
-      score += flavorScore;
+  // Calculate maximum possible matches based on coffee's flavor notes count
+  const coffeeNotesCount = coffeeFlavorNotes.length;
+  const maxPossibleMatches = Math.min(3, Math.max(2, coffeeNotesCount));
+  
+  // Calculate score (5 points per match, normalized to account for coffees with 2 notes)
+  const normalizedScore = (matches / maxPossibleMatches) * 15;
+  
+  // If coffee has 2 notes and matches both, give full score
+  if (coffeeNotesCount === 2 && matches === 2) {
+    return 15;
+  }
+  
+  return normalizedScore;
+};
 
-      // Drink style compatibility (0-5 points) - Lowest weight
-      const drinkStyleScore =
-        (drinkStyle === "With milk" && coffee.roastLevel >= 4) ||
-        (drinkStyle === "Straight up" && coffee.roastLevel <= 3)
-          ? 5
-          : 0;
-      score += drinkStyleScore;
+const calculateDrinkStyleScore = (
+  coffee: Coffee,
+  userDrinkStyle: DrinkStyle
+): number => {
+  const isMilkBased = userDrinkStyle === "With milk";
+  const isStrongRoast = coffee.roastLevel >= 4;
+  
+  return (isMilkBased && isStrongRoast) || (!isMilkBased && !isStrongRoast) ? 5 : 0;
+};
 
-      // Priority bonus (1-9 points) - Tiebreaker
-      const priorityBonus = 10 - coffee.priority;
-      score += priorityBonus;
+const calculatePriorityBonus = (coffeePriority: number): number => {
+  return 10 - coffeePriority;
+};
 
-      return {
-        coffee,
-        score,
-        debug: {
-          roastScore,
-          flavorScore,
-          drinkStyleScore,
-          priorityBonus,
-        },
-      };
-    });
+export const findBestCoffeeMatches = (
+  availableCoffees: Coffee[],
+  userDrinkStyle: DrinkStyle,
+  userRoastLevel: number,
+  userPreferredFlavors: FlavorNote[],
+): Coffee[] => {
+  // Calculate scores for each coffee
+  const coffeeScores: CoffeeScore[] = availableCoffees.map((coffee) => {
+    const roastScore = calculateRoastScore(coffee.roastLevel, userRoastLevel);
+    const flavorScore = calculateFlavorScore(coffee.flavorNotes, userPreferredFlavors);
+    const drinkStyleScore = calculateDrinkStyleScore(coffee, userDrinkStyle);
+    const priorityBonus = calculatePriorityBonus(coffee.priority);
+
+    const totalScore = roastScore + flavorScore + drinkStyleScore + priorityBonus;
+
+    return {
+      coffee,
+      totalScore,
+      details: {
+        roastScore,
+        flavorScore,
+        drinkStyleScore,
+        priorityBonus,
+      },
+    };
+  });
+
+  // Sort coffees by score in descending order AND by priority in ascending order for equal scores
+  const sortedCoffees = coffeeScores.sort((a, b) => {
+    if (b.totalScore !== a.totalScore) {
+      return b.totalScore - a.totalScore;
+    }
+    // If scores are equal, sort by priority (lower priority first)
+    return a.coffee.priority - b.coffee.priority;
+  });
 
   // Log scoring details for debugging
   console.log(
     "Coffee Scores:",
-    coffeeScores.map(({ coffee, score, debug }) => ({
+    sortedCoffees.map(({ coffee, totalScore, details }) => ({
       name: coffee.name,
-      totalScore: score,
-      ...debug,
+      totalScore,
+      priority: coffee.priority,
+      flavorNotes: coffee.flavorNotes,
+      ...details,
     }))
   );
 
-  return coffeeScores.sort((a, b) => b.score - a.score)[0].coffee;
+  // Return top 2 matches
+  return sortedCoffees.slice(0, 2).map(score => score.coffee);
 };
