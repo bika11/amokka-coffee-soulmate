@@ -11,7 +11,6 @@ export const ProgressBar = ({ currentStep, totalSteps }: ProgressBarProps) => {
     <div className="space-y-2">
       <div className="flex justify-between text-sm text-muted-foreground">
         <span>Step {currentStep} of {totalSteps}</span>
-        <span>{Math.round(progress)}% Complete</span>
       </div>
       <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
         <div
