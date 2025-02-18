@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { Instagram } from "lucide-react";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_TABLES } from "@/integrations/supabase/constants";
 import { useToast } from "./ui/use-toast";
 
 interface CoffeeRecommendationProps {
@@ -29,7 +30,7 @@ export const CoffeeRecommendation = ({
   const trackCoffeeClick = async (coffeeName: string) => {
     try {
       const { error } = await supabase
-        .from('coffee_clicks')
+        .from(SUPABASE_TABLES.COFFEE_CLICKS)
         .insert([{ coffee_name: coffeeName }]);
 
       if (error) throw error;
