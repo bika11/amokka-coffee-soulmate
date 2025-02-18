@@ -16,8 +16,8 @@ interface Coffee {
   priority: number;
 }
 
-// Simple cosine similarity implementation
-function calculateSimilarity(
+// Content-based similarity calculation
+function calculateContentSimilarity(
   userPreferences: UserPreferences,
   coffee: Coffee
 ): number {
@@ -27,7 +27,6 @@ function calculateSimilarity(
   const roastLevels = ['light', 'medium-light', 'medium', 'medium-dark', 'dark'];
   const coffeeRoastIndex = roastLevels.indexOf(coffee.roast_level.toLowerCase());
   if (coffeeRoastIndex !== -1) {
-    // Convert 1-5 roast level to 0-4 index
     const userRoastIndex = Math.max(0, Math.min(4, userPreferences.roastLevel - 1));
     score += 1 - (Math.abs(coffeeRoastIndex - userRoastIndex) / 4);
   }
@@ -39,6 +38,61 @@ function calculateSimilarity(
   score += flavorMatch / Math.max(userPreferences.selectedFlavors.length, coffee.flavor_notes.length);
 
   return score / 2; // Normalize to 0-1 range
+}
+
+// Collaborative filtering score calculation
+async function calculateCollaborativeScore(
+  coffeeName: string, 
+  userPreferences: UserPreferences,
+  supabaseClient: any
+): Promise<number> {
+  try {
+    // Get click data for this coffee
+    const { data: clickData, error: clickError } = await supabaseClient
+      .from('coffee_clicks')
+      .select('user_id')
+      .eq('coffee_name', coffeeName);
+
+    if (clickError) throw clickError;
+
+    // Get user interactions for users who clicked this coffee
+    const { data: userInteractions, error: interactionsError } = await supabaseClient
+      .from('user_interactions')
+      .select('*')
+      .in('user_id', clickData.map((click: any) => click.user_id));
+
+    if (interactionsError) throw interactionsError;
+
+    if (!userInteractions.length) return 0;
+
+    // Calculate similarity between current user preferences and other users who clicked this coffee
+    const similarityScores = userInteractions.map((interaction: any) => {
+      let score = 0;
+
+      // Roast level similarity
+      const roastDiff = Math.abs(interaction.selected_roast_level - userPreferences.roastLevel);
+      score += 1 - (roastDiff / 4);
+
+      // Flavor preferences similarity
+      const flavorMatch = interaction.selected_flavors.filter((flavor: string) =>
+        userPreferences.selectedFlavors.includes(flavor)
+      ).length;
+      score += flavorMatch / Math.max(userPreferences.selectedFlavors.length, interaction.selected_flavors.length);
+
+      // Brew method similarity
+      if (interaction.selected_brew_method === userPreferences.brewMethod) {
+        score += 1;
+      }
+
+      return score / 3; // Normalize to 0-1 range
+    });
+
+    // Return average similarity score
+    return similarityScores.reduce((a: number, b: number) => a + b, 0) / similarityScores.length;
+  } catch (error) {
+    console.error('Error calculating collaborative score:', error);
+    return 0;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -63,13 +117,21 @@ Deno.serve(async (req) => {
 
     if (fetchError) throw fetchError
 
-    // Calculate similarity scores
-    const predictions = coffees.map((coffee: Coffee) => ({
-      coffee_name: coffee.name,
-      prediction_score: calculateSimilarity(userPreferences, coffee),
-      user_id: userId,
-      model_version: '1.0.0-content-based'
-    }))
+    // Calculate hybrid scores
+    const predictions = await Promise.all(coffees.map(async (coffee: Coffee) => {
+      const contentScore = calculateContentSimilarity(userPreferences, coffee);
+      const collaborativeScore = await calculateCollaborativeScore(coffee.name, userPreferences, supabaseClient);
+      
+      // Hybrid score: 70% content-based, 30% collaborative
+      const hybridScore = (contentScore * 0.7) + (collaborativeScore * 0.3);
+
+      return {
+        coffee_name: coffee.name,
+        prediction_score: hybridScore,
+        user_id: userId,
+        model_version: '2.0.0-hybrid'
+      };
+    }));
 
     // Store predictions
     const { error: insertError } = await supabaseClient
