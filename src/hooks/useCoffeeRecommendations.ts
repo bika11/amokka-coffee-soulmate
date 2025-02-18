@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   COFFEES,
   type Coffee,
@@ -31,30 +32,83 @@ export const useCoffeeRecommendations = () => {
   }: CoffeePreferences) => {
     setIsLoading(true);
     try {
-      console.log('Getting local recommendations with preferences:', {
+      console.log('Calling Edge Function with preferences:', {
         drinkStyle,
         roastLevel,
         selectedFlavors,
         brewMethod,
       });
 
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw sessionError;
+      }
+
+      if (!session?.access_token) {
+        throw new Error('No active session');
+      }
+
+      const { data: recommendationsData, error } = await supabase.functions.invoke(
+        "get-coffee-recommendations",
+        {
+          body: { 
+            userPreferences: {
+              drinkStyle,
+              roastLevel,
+              selectedFlavors,
+              brewMethod,
+            }
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
+      }
+
+      console.log('Received recommendations:', recommendationsData);
+
+      const recommendedCoffees = recommendationsData.recommendations
+        .map((rec: any) => COFFEES.find(c => c.name === rec.name))
+        .filter(Boolean);
+
+      if (recommendedCoffees.length === 0) {
+        console.log('No recommendations received, using fallback');
+        // Fallback to local recommendations if no ML recommendations
+        const topMatches = findBestCoffeeMatches(
+          COFFEES,
+          drinkStyle,
+          roastLevel,
+          selectedFlavors
+        ).slice(0, 2);
+        setRecommendations(topMatches);
+      } else {
+        console.log('Setting recommendations:', recommendedCoffees);
+        setRecommendations(recommendedCoffees);
+      }
+      setCurrentIndex(0);
+    } catch (error) {
+      console.error("Error getting recommendation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get recommendation. Using backup recommendations.",
+        variant: "destructive",
+      });
       const topMatches = findBestCoffeeMatches(
         COFFEES,
         drinkStyle,
         roastLevel,
         selectedFlavors
       ).slice(0, 2);
-      
-      console.log('Found matches:', topMatches);
       setRecommendations(topMatches);
       setCurrentIndex(0);
-    } catch (error) {
-      console.error("Error getting recommendation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to get recommendations. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
