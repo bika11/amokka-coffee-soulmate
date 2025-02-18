@@ -32,40 +32,38 @@ export const useCoffeeRecommendations = () => {
   }: CoffeePreferences) => {
     setIsLoading(true);
     try {
-      const preferences = `I like coffee that is ${
-        drinkStyle === "Straight up" ? "black" : "with milk"
-      }, roast level ${roastLevel}/6, and I enjoy ${selectedFlavors.join(
-        ", "
-      )} flavors. I brew using ${brewMethod?.toLowerCase()}.`;
-
-      const { data, error } = await supabase.functions.invoke(
-        "get-coffee-recommendation",
+      const { data: recommendationsData, error } = await supabase.functions.invoke(
+        "get-coffee-recommendations",
         {
-          body: { preferences },
+          body: { 
+            userPreferences: {
+              drinkStyle,
+              roastLevel,
+              selectedFlavors,
+              brewMethod,
+            }
+          },
         }
       );
 
       if (error) throw error;
 
-      const recommendedCoffee = COFFEES.find(
-        (coffee) => coffee.name === data.recommendation
-      );
+      const recommendedCoffees = recommendationsData.recommendations
+        .map((rec: any) => COFFEES.find(c => c.name === rec.name))
+        .filter(Boolean);
 
-      const topMatches = findBestCoffeeMatches(
-        COFFEES,
-        drinkStyle,
-        roastLevel,
-        selectedFlavors
-      );
-
-      // Sort recommendations by priority (lower is better)
-      const finalRecommendations = recommendedCoffee
-        ? [recommendedCoffee, ...topMatches.filter(c => c.name !== recommendedCoffee.name)]
-            .slice(0, 2)
-            .sort((a, b) => a.priority - b.priority)
-        : topMatches.slice(0, 2);
-
-      setRecommendations(finalRecommendations);
+      if (recommendedCoffees.length === 0) {
+        // Fallback to local recommendations if no ML recommendations
+        const topMatches = findBestCoffeeMatches(
+          COFFEES,
+          drinkStyle,
+          roastLevel,
+          selectedFlavors
+        ).slice(0, 2);
+        setRecommendations(topMatches);
+      } else {
+        setRecommendations(recommendedCoffees);
+      }
       setCurrentIndex(0);
     } catch (error) {
       console.error("Error getting recommendation:", error);

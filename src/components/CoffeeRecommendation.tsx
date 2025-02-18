@@ -34,7 +34,6 @@ export const CoffeeRecommendation = ({
 
       if (error) throw error;
       
-      // Optional: Log successful tracking
       console.log(`Click tracked for coffee: ${coffeeName}`);
     } catch (error) {
       console.error('Error tracking coffee click:', error);
@@ -46,9 +45,9 @@ export const CoffeeRecommendation = ({
     }
   };
 
-  const handleCoffeeClick = (url: string) => {
+  const handleCoffeeClick = () => {
     trackCoffeeClick(coffee.name);
-    window.open(url, '_blank');
+    window.open(coffee.url, '_blank');
   };
   
   return (
@@ -78,7 +77,7 @@ export const CoffeeRecommendation = ({
               url={coffee.url}
               onTryAnother={onTryAnother}
               onReset={onReset}
-              onBuyClick={() => handleCoffeeClick(coffee.url)}
+              onBuyClick={handleCoffeeClick}
             />
             <div className="flex justify-end">
               <Button
