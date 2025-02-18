@@ -40,13 +40,15 @@ export const ActionButtons = ({ url, onTryAnother, onReset }: ActionButtonsProps
         </Button>
       </motion.div>
       
-      <Button 
-        onClick={onReset} 
-        variant="outline" 
-        className="w-full py-6 text-lg font-medium hover:bg-accent/10 transition-all duration-200"
-      >
-        Start Over
-      </Button>
+      <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+        <Button 
+          onClick={onReset} 
+          variant="outline" 
+          className="w-full py-6 text-lg font-medium hover:bg-accent/10 transition-all duration-200"
+        >
+          Start Over
+        </Button>
+      </motion.div>
     </div>
   );
 };
