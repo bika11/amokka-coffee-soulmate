@@ -99,6 +99,46 @@ serve(async (req) => {
 
   try {
     const { message, history } = await req.json();
+
+    if (!message) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+          details: "Message is required."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (typeof message !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+          details: "Message must be a string."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (history && !Array.isArray(history)) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+          details: "History must be an array."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     console.log('Received message:', message);
     console.log('Chat history:', history);
 
@@ -115,7 +155,7 @@ serve(async (req) => {
     // Fetch coffee data to provide as context
     const { data: coffees } = await supabase
       .from('amokka_products')
-      .select('*');
+      .select('name, description, roast_level, flavor_notes, product_link');
 
     if (!coffees) {
       throw new Error('Failed to fetch coffee data');

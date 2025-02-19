@@ -1,4 +1,5 @@
 
+import { sanitizeString } from "@/lib/utils";
 import { Coffee } from "@/lib/coffee-data";
 import { Card } from "@/components/ui/card";
 import { ChatBot } from "./ChatBot";
@@ -68,9 +69,9 @@ export const CoffeeRecommendation = ({
         
         <div className="p-8 space-y-8">
           <CoffeeDetails
-            name={coffee.name}
-            description={coffee.description}
-            flavorNotes={coffee.flavorNotes}
+            name={sanitizeString(coffee.name)}
+            description={sanitizeString(coffee.description)}
+            flavorNotes={coffee.flavorNotes.map(sanitizeString)}
           />
           
           <div className="space-y-4">

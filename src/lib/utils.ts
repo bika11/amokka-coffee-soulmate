@@ -1,6 +1,7 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export const cn = (...inputs: string[]) => {
+  return inputs.filter(Boolean).join(' ')
 }
+
+export const sanitizeString = (str: string): string => {
+  return str.replace(/</g, "<").replace(/>/g, ">");
+};

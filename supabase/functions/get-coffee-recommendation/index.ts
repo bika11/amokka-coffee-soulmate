@@ -59,9 +59,31 @@ serve(async (req) => {
     }
 
     const { preferences } = await req.json();
-    
+
     if (!preferences) {
-      throw new Error('No preferences provided');
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+          details: "Preferences are required."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (typeof preferences !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+          details: "Preferences must be a string."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('Received preferences:', preferences);
@@ -93,7 +115,7 @@ serve(async (req) => {
     // Query the database for matching coffees
     const { data: coffees, error: dbError } = await supabase
       .from('coffees')
-      .select('*')
+      .select('name, flavor_notes, priority, roast_level')
       .eq('roast_level', roastLevel);
 
     if (dbError) {
