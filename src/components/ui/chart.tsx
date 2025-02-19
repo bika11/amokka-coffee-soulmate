@@ -20,7 +20,6 @@ interface ChartBarStackedProps extends React.ComponentPropsWithoutRef<typeof Rec
 
 const ChartBarStacked = React.forwardRef<React.ElementRef<typeof RechartsPrimitive.BarChart>, ChartBarStackedProps>(
   ({ className, data, ...props }, ref) => {
-    // Memoize the transformed data
     const memoizedData = React.useMemo(() => data, [data]);
 
     return (
@@ -52,36 +51,28 @@ const ChartBarStacked = React.forwardRef<React.ElementRef<typeof RechartsPrimiti
 );
 ChartBarStacked.displayName = "ChartBarStacked";
 
-const ChartBar = React.forwardRef<
-  React.ElementRef<typeof RechartsPrimitive.Bar>,
-  React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Bar>
->((props, ref) => (
-  <RechartsPrimitive.Bar ref={ref} {...props} />
-));
+// Updated Bar component with correct typing
+const ChartBar = ({ ...props }: React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Bar>) => (
+  <RechartsPrimitive.Bar {...props} />
+);
 ChartBar.displayName = "ChartBar";
 
-const ChartLine = React.forwardRef<
-  React.ElementRef<typeof RechartsPrimitive.Line>,
-  React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Line>
->(({ className, ...props }, ref) => (
+// Updated Line component with correct typing
+const ChartLine = ({ className, ...props }: React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Line>) => (
   <RechartsPrimitive.Line
-    ref={ref}
     className={cn("", className)}
     {...props}
   />
-));
+);
 ChartLine.displayName = "ChartLine";
 
-const ChartArea = React.forwardRef<
-  React.ElementRef<typeof RechartsPrimitive.Area>,
-  React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Area>
->(({ className, ...props }, ref) => (
+// Updated Area component with correct typing
+const ChartArea = ({ className, ...props }: React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Area>) => (
   <RechartsPrimitive.Area
-    ref={ref}
     className={cn("", className)}
     {...props}
   />
-));
+);
 ChartArea.displayName = "ChartArea";
 
 interface ChartLegendItemProps {
@@ -98,7 +89,6 @@ interface ChartLegendItemProps {
 
 const ChartLegendItem = React.forwardRef<HTMLDivElement, ChartLegendItemProps>(
   ({ className, indicator = "dot", itemConfig, hideIndicator, indicatorColor, nestLabel, children }, ref) => {
-    // Memoize the indicator color style
     const indicatorStyle = React.useMemo(
       () => ({
         "--color-bg": indicatorColor,
@@ -107,7 +97,6 @@ const ChartLegendItem = React.forwardRef<HTMLDivElement, ChartLegendItemProps>(
       [indicatorColor]
     );
 
-    // Memoize the indicator className
     const indicatorClassName = React.useMemo(
       () => cn(
         "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
