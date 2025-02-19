@@ -158,7 +158,17 @@ serve(async (req) => {
       .select('name, description, roast_level, flavor_notes, product_link');
 
     if (!coffees) {
-      throw new Error('Failed to fetch coffee data');
+      console.error('Failed to fetch coffee data:', dbError); // Log the error
+      return new Response(
+        JSON.stringify({
+          error: "Failed to fetch coffee data",
+          details: dbError
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Format coffee data as context
