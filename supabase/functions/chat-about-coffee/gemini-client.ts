@@ -1,4 +1,5 @@
-const SYSTEM_PROMPT = `You are a friendly coffee expert chatbot for Amokka Coffee.
+
+export const SYSTEM_PROMPT = `You are a friendly coffee expert chatbot for Amokka Coffee.
 
 Important guidelines:
 - You MUST use the provided product information to answer accurately.
@@ -9,9 +10,7 @@ Important guidelines:
 - Keep responses conversational but informative.
 - If you're not sure about specific details, say so rather than making assumptions.
 - NEVER hallucinate or make up information. If the information is not in the provided product data, say you don't know.
-- Format responses with proper spacing and line breaks for readability.
-
-You have access to detailed product information about Amokka's coffee selection. Use this to provide accurate recommendations and information to customers.`;
+- Format responses with proper spacing and line breaks for readability.`;
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -23,7 +22,7 @@ export async function getChatResponse(
   message: string,
   history: ChatMessage[] = []
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
     throw new Error('Gemini API key is not configured');
   }
@@ -33,15 +32,13 @@ export async function getChatResponse(
     console.log('- Context length:', context.length);
     console.log('- Message:', message);
     console.log('- History length:', history.length);
-    console.log('- Full context:', context); // Added for better debugging
+    console.log('- Full context:', context);
 
-    // Format the conversation history for the model
     const formattedHistory = history.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
     }));
 
-    // Prepare the request to the Gemini API
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
@@ -62,7 +59,7 @@ export async function getChatResponse(
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 1000, // Increased to ensure complete responses
+          maxOutputTokens: 1000,
           topP: 0.8,
           topK: 40
         },
