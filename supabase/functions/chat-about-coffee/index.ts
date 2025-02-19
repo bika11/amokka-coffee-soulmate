@@ -1,5 +1,4 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getChatResponse } from "./gemini-client.ts";
@@ -30,9 +29,13 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch coffee data to provide as context
-    const { data: coffees } = await supabase
+    const { data: coffees, error } = await supabase
       .from('coffees')
       .select('*');
+
+    if (error) {
+      throw error;
+    }
 
     if (!coffees) {
       throw new Error('Failed to fetch coffee data');
@@ -63,7 +66,7 @@ URL: ${coffee.product_link}
     console.error('Error in chat-about-coffee function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
         details: 'An error occurred while processing your request.'
       }),
       { 
