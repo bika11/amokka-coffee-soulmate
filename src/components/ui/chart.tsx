@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 import { cn } from "@/lib/utils";
@@ -14,41 +13,43 @@ const Chart = React.forwardRef<React.ElementRef<typeof RechartsPrimitive.Respons
 );
 Chart.displayName = "Chart";
 
-interface ChartBarStackedProps extends React.ComponentPropsWithoutRef<typeof RechartsPrimitive.BarChart> {
-  data: any[];
+interface ChartData {
+  name: string;
+  [key: string]: number | string;
 }
 
-const ChartBarStacked = React.forwardRef<React.ElementRef<typeof RechartsPrimitive.BarChart>, ChartBarStackedProps>(
-  ({ className, data, ...props }, ref) => {
-    const memoizedData = React.useMemo(() => data, [data]);
+interface ChartBarStackedProps extends React.ComponentPropsWithoutRef<typeof RechartsPrimitive.BarChart> {
+  data: ChartData[];
+}
 
-    return (
-      <RechartsPrimitive.BarChart
-        ref={ref}
-        data={memoizedData}
-        className={cn("", className)}
-        {...props}
-      >
-        <RechartsPrimitive.XAxis
-          dataKey="name"
-          stroke="#888888"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-        />
-        <RechartsPrimitive.YAxis
-          stroke="#888888"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `${value}`}
-        />
-        <RechartsPrimitive.Tooltip />
-        {props.children}
-      </RechartsPrimitive.BarChart>
-    );
-  }
-);
+const ChartBarStacked = ({ className, data, ...props }: ChartBarStackedProps) => {
+  const memoizedData = React.useMemo(() => data, [data]);
+
+  return (
+    <RechartsPrimitive.BarChart
+      data={memoizedData}
+      className={cn("", className)}
+      {...props}
+    >
+      <RechartsPrimitive.XAxis
+        dataKey="name"
+        stroke="#888888"
+        fontSize={12}
+        tickLine={false}
+        axisLine={false}
+      />
+      <RechartsPrimitive.YAxis
+        stroke="#888888"
+        fontSize={12}
+        tickLine={false}
+        axisLine={false}
+        tickFormatter={(value) => `${value}`}
+      />
+      <RechartsPrimitive.Tooltip />
+      {props.children}
+    </RechartsPrimitive.BarChart>
+  );
+};
 ChartBarStacked.displayName = "ChartBarStacked";
 
 // Updated Bar component with correct typing
@@ -79,7 +80,7 @@ interface ChartLegendItemProps {
   className?: string;
   indicator?: "dot" | "line" | "dashed";
   itemConfig?: {
-    icon?: React.ComponentType;
+    icon?: React.ComponentType<any>;
   };
   hideIndicator?: boolean;
   indicatorColor?: string;
