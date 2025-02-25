@@ -34,12 +34,13 @@ serve(async (req) => {
         'No authentication token or API key provided'
       );
     }
-
+/*
     const { message, history } = await validateChatRequest(req);
 
     // Apply rate limiting
     const clientIp = req.headers.get("x-real-ip") || "unknown";
     await rateLimiter.checkRateLimit(clientIp);
+*/
 
     // Initialize the AI client (prefer Gemini, fallback to OpenAI)
     const aiClient = Deno.env.get("GEMINI_API_KEY") 
