@@ -3,5 +3,8 @@
     "start": "deno run --allow-read --allow-env --allow-net /workspaces/amokka-coffee-soulmate/supabase/functions/chat-about-coffee/index.ts",
     "lint": "deno lint supabase/functions/chat-about-coffee/index.ts",
     "check": "deno check supabase/functions/chat-about-coffee/index.ts"
+  },
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
   }
 }
