@@ -1,6 +1,7 @@
-import { SupabaseClient, createClient } from 'https://esm.sh/@supabase/supabase-js';
-import { ChatError } from './error-handler.ts';
-import { ERROR_MESSAGES, HTTP_STATUS } from './constants.ts';
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ChatError } from "./error-handler.ts";
+import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
 interface AmokkaProduct {
   name: string;
@@ -13,12 +14,13 @@ interface AmokkaProduct {
   overall_description?: string;
 }
 
-export async function buildCoffeeContext(supabase: SupabaseClient): Promise<string> {
+export async function buildCoffeeContext(supabaseUrl: string, supabaseKey: string): Promise<string> {
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
   const { data: products, error: dbError } = await supabase
     .from('amokka_products')
     .select('*')
     .eq('is_verified', true); // Only get verified products
-
 
   if (dbError) {
     throw new ChatError(ERROR_MESSAGES.DATABASE_ERROR, HTTP_STATUS.INTERNAL_SERVER_ERROR, dbError.message);
