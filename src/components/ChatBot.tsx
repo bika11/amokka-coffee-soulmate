@@ -42,10 +42,8 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      // Get the current session
-      const { error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-
+      const { data: session } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
         body: { 
           message: userMessage,
@@ -53,6 +51,9 @@ export const ChatBot = () => {
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.content
           }))
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ''}`
         }
       });
 

@@ -21,6 +21,20 @@ serve(async (req) => {
   }
 
   try {
+    // Get the token from the Authorization header
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1] || null;
+
+    // Check if we have either a valid token or an anonymous key
+    const isAnonymousRequest = req.headers.get('apikey') !== null;
+    if (!token && !isAnonymousRequest) {
+      throw new ChatError(
+        ERROR_MESSAGES.UNAUTHORIZED,
+        HTTP_STATUS.UNAUTHORIZED,
+        'No authentication token or API key provided'
+      );
+    }
+
     const { message, history } = await validateRequest(req);
 
     // Apply rate limiting
