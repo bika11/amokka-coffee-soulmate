@@ -1,13 +1,16 @@
+/// <reference lib="deno.window" />
 
-import { config } from "https://deno.land/x/dotenv/mod.ts";
-
+import dotenv from 'dotenv';
 import { ChatCompletionRequestMessage } from "./types.ts";
+
+// Initialize dotenv
+dotenv.config();
 
 export class GeminiClient {
   private apiKey: string;
 
   constructor() {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY is not set");
     }
