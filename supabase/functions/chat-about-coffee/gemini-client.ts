@@ -1,7 +1,7 @@
 /// <reference lib="deno.window" />
 
 import dotenv from 'dotenv';
-import { ChatCompletionRequestMessage } from "./types.ts";
+import { ChatCompletionRequestMessage } from "./types";
 
 // Initialize dotenv
 dotenv.config();
