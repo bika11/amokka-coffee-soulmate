@@ -1,5 +1,5 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { ChatError } from "./error-handler.ts";
 import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
@@ -23,11 +23,11 @@ export async function buildCoffeeContext(supabaseUrl: string, supabaseKey: strin
     .eq('is_verified', true); // Only get verified products
 
   if (dbError) {
-    throw new ChatError(ERROR_MESSAGES.DATABASE_ERROR, HTTP_STATUS.INTERNAL_SERVER_ERROR, dbError.message);
+    throw new ChatError(ERROR_MESSAGES.GENERAL_ERROR, HTTP_STATUS.INTERNAL_SERVER_ERROR, dbError.message);
   }
 
   if (!products?.length) {
-    throw new ChatError(ERROR_MESSAGES.NO_COFFEE_DATA, HTTP_STATUS.NOT_FOUND);
+    throw new ChatError(ERROR_MESSAGES.GENERAL_ERROR, HTTP_STATUS.NOT_FOUND);
   }
 
   return formatProductData(products as AmokkaProduct[]);

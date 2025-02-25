@@ -1,8 +1,10 @@
 import { ChatError } from "./error-handler.ts";
 import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
+import { ChatCompletionRequestMessage } from "./types.ts";
+
 interface ChatMessage {
-  role: string;
+  role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
@@ -10,6 +12,7 @@ export interface ChatRequest {
   message: string;
   history?: ChatMessage[];
 }
+
 
 export function validateChatRequest(data: unknown): ChatRequest {
   if (!data || typeof data !== 'object') {
@@ -19,11 +22,11 @@ export function validateChatRequest(data: unknown): ChatRequest {
   const request = data as ChatRequest;
 
   if (!request.message || typeof request.message !== 'string') {
-    throw new ChatError(ERROR_MESSAGES.INVALID_MESSAGE, HTTP_STATUS.BAD_REQUEST);
+    throw new ChatError(ERROR_MESSAGES.INVALID_REQUEST, HTTP_STATUS.BAD_REQUEST);
   }
 
   if (request.history && !Array.isArray(request.history)) {
-    throw new ChatError(ERROR_MESSAGES.INVALID_HISTORY, HTTP_STATUS.BAD_REQUEST);
+    throw new ChatError(ERROR_MESSAGES.INVALID_REQUEST, HTTP_STATUS.BAD_REQUEST);
   }
 
   return request;

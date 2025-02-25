@@ -5,7 +5,7 @@ import { ChatCompletionRequestMessage } from "./types.ts";
 import { OpenAIClient } from "./openai-client.ts";
 import { GeminiClient } from "./gemini-client.ts";
 import { ChatError } from "./error-handler.ts";
-import { validateRequest } from "./request-validator.ts";
+import { validateChatRequest } from "./request-validator.ts";
 import { RateLimiter } from "./rate-limiter.ts";
 import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
@@ -35,7 +35,7 @@ serve(async (req) => {
       );
     }
 
-    const { message, history } = await validateRequest(req);
+    const { message, history } = await validateChatRequest(req);
 
     // Apply rate limiting
     const clientIp = req.headers.get("x-real-ip") || "unknown";
@@ -52,7 +52,7 @@ serve(async (req) => {
         role: "system",
         content: "You are a friendly and knowledgeable coffee expert. Your goal is to help users learn about different coffee types, brewing methods, and find the perfect coffee match for their taste. Be concise but informative, and always maintain a helpful and positive tone.",
       },
-      ...history,
+      ...(history || []),
       { role: "user", content: message },
     ];
 
@@ -86,7 +86,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: ERROR_MESSAGES.GENERAL_ERROR,
-        details: error.message
+        details: error instanceof Error ? error.message : String(error)
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

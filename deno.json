@@ -1,7 +1,6 @@
 {
-  "tasks": {
-    "start": "deno run --allow-read --allow-env --allow-net /workspaces/amokka-coffee-soulmate/supabase/functions/chat-about-coffee/index.ts",
-    "lint": "deno lint supabase/functions/chat-about-coffee/index.ts",
-    "check": "deno check supabase/functions/chat-about-coffee/index.ts"
+  "imports": {
+    "std/": "https://deno.land/std@0.168.0/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js"
   }
 }
