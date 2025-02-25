@@ -1,6 +1,6 @@
 
-import { ChatError } from './error-handler.ts';
-import { ERROR_MESSAGES, HTTP_STATUS } from './constants.ts';
+import { ChatError } from "./error-handler.ts";
+import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
 export interface ChatRequest {
   message: string;

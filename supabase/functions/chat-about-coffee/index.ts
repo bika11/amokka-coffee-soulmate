@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getChatResponse } from "./gemini-client.ts";
 import { rateLimiter } from "./rate-limiter.ts";
 import { config } from "./config.ts";
-import { handleError } from "./error-handler.ts";
+import { handleError, ChatError } from "./error-handler.ts";
 import { buildCoffeeContext } from "./context-builder.ts";
 import { validateChatRequest } from "./request-validator.ts";
 import { CORS_HEADERS, HTTP_STATUS, ERROR_MESSAGES } from "./constants.ts";
@@ -23,14 +23,12 @@ async function handleChatRequest(req: Request) {
   console.log('Received message:', message);
   console.log('Chat history:', history);
 
-  // Initialize Supabase client
-  const supabase = createClient(
-    config.get('SUPABASE_URL'),
-    config.get('SUPABASE_SERVICE_ROLE_KEY')
-  );
+  // Get Supabase credentials from config
+  const supabaseUrl = config.get('SUPABASE_URL');
+  const supabaseKey = config.get('SUPABASE_SERVICE_ROLE_KEY');
 
   // Build context from coffee data
-  const context = await buildCoffeeContext(supabase);
+  const context = await buildCoffeeContext(supabaseUrl, supabaseKey);
 
   // Get response from Gemini
   const response = await getChatResponse(context, message, history);

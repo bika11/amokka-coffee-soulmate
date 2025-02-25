@@ -1,7 +1,7 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
-import { ChatError } from './error-handler.ts';
-import { ERROR_MESSAGES, HTTP_STATUS } from './constants.ts';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ChatError } from "./error-handler.ts";
+import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
 interface Coffee {
   name: string;
@@ -11,7 +11,9 @@ interface Coffee {
   product_link: string;
 }
 
-export async function buildCoffeeContext(supabase: SupabaseClient): Promise<string> {
+export async function buildCoffeeContext(supabaseUrl: string, supabaseKey: string): Promise<string> {
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
   const { data: coffees, error: dbError } = await supabase
     .from('coffees')
     .select('*');
