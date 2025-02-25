@@ -1,55 +1,82 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getChatResponse } from "./gemini-client.ts";
-import { rateLimiter } from "./rate-limiter.ts";
-import { config } from "./config.ts";
-import { handleError, ChatError } from "./error-handler.ts";
-import { buildCoffeeContext } from "./context-builder.ts";
-import { validateChatRequest } from "./request-validator.ts";
-import { CORS_HEADERS, HTTP_STATUS, ERROR_MESSAGES } from "./constants.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { ChatCompletionRequestMessage } from "./types.ts";
+import { OpenAIClient } from "./openai-client.ts";
+import { GeminiClient } from "./gemini-client.ts";
+import { ChatError } from "./error-handler.ts";
+import { validateRequest } from "./request-validator.ts";
+import { RateLimiter } from "./rate-limiter.ts";
+import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
-async function handleChatRequest(req: Request) {
-  // Rate limiting check
-  const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-  if (rateLimiter.isRateLimited(clientIP)) {
-    throw new ChatError(ERROR_MESSAGES.TOO_MANY_REQUESTS, HTTP_STATUS.TOO_MANY_REQUESTS, 'Please try again later');
-  }
+const rateLimiter = new RateLimiter();
 
-  // Parse and validate request
-  const data = await req.json();
-  const { message, history } = validateChatRequest(data);
-  
-  console.log('Received message:', message);
-  console.log('Chat history:', history);
-
-  // Get Supabase credentials from config
-  const supabaseUrl = config.get('SUPABASE_URL');
-  const supabaseKey = config.get('SUPABASE_SERVICE_ROLE_KEY');
-
-  // Build context from coffee data
-  const context = await buildCoffeeContext(supabaseUrl, supabaseKey);
-
-  // Get response from Gemini
-  const response = await getChatResponse(context, message, history);
-
-  return new Response(
-    JSON.stringify({ response }),
-    { 
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      status: HTTP_STATUS.OK
-    }
-  );
-}
-
-serve(async (req: Request) => {
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: CORS_HEADERS });
+    return new Response(null, {
+      headers: corsHeaders,
+    });
   }
 
   try {
-    return await handleChatRequest(req);
+    const { message, history } = await validateRequest(req);
+
+    // Apply rate limiting
+    const clientIp = req.headers.get("x-real-ip") || "unknown";
+    await rateLimiter.checkRateLimit(clientIp);
+
+    // Initialize the AI client (prefer Gemini, fallback to OpenAI)
+    const aiClient = Deno.env.get("GEMINI_API_KEY") 
+      ? new GeminiClient() 
+      : new OpenAIClient();
+
+    // Prepare conversation history
+    const messages: ChatCompletionRequestMessage[] = [
+      {
+        role: "system",
+        content: "You are a friendly and knowledgeable coffee expert. Your goal is to help users learn about different coffee types, brewing methods, and find the perfect coffee match for their taste. Be concise but informative, and always maintain a helpful and positive tone.",
+      },
+      ...history,
+      { role: "user", content: message },
+    ];
+
+    // Get AI response
+    const response = await aiClient.getCompletion(messages);
+
+    return new Response(
+      JSON.stringify({ response }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
+    );
+
   } catch (error) {
-    return handleError(error);
+    console.error("Error in chat-about-coffee function:", error);
+
+    if (error instanceof ChatError) {
+      return new Response(
+        JSON.stringify({ 
+          error: error.message,
+          details: error.details 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: error.status,
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        error: ERROR_MESSAGES.GENERAL_ERROR,
+        details: error.message
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      }
+    );
   }
 });
