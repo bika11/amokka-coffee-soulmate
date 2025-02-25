@@ -12,10 +12,11 @@ import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 const rateLimiter = new RateLimiter();
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Always include CORS headers in the response
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: corsHeaders,
+      status: 204,
+      headers: corsHeaders
     });
   }
 
