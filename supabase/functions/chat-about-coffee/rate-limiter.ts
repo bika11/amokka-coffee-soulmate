@@ -1,41 +1,21 @@
 
-class RateLimiter {
-  private requests: Map<string, { count: number; timestamp: number }> = new Map();
-  private readonly limit: number;
-  private readonly windowMs: number;
+export class RateLimiter {
+  private requests: Map<string, number[]> = new Map();
+  private readonly windowMs = 60000; // 1 minute
+  private readonly maxRequests = 10; // 10 requests per minute
 
-  constructor(limit = 20, windowMs = 60000) {
-    this.limit = limit;
-    this.windowMs = windowMs;
-    this.cleanup();
-  }
-
-  private cleanup() {
+  async checkRateLimit(clientIp: string): Promise<void> {
     const now = Date.now();
-    for (const [key, value] of this.requests.entries()) {
-      if (now - value.timestamp > this.windowMs) {
-        this.requests.delete(key);
-      }
+    const requestTimes = this.requests.get(clientIp) || [];
+    
+    // Remove old requests
+    const validRequests = requestTimes.filter(time => now - time < this.windowMs);
+    
+    if (validRequests.length >= this.maxRequests) {
+      throw new Error('Too many requests, please try again later');
     }
-    // Run cleanup every minute
-    setTimeout(() => this.cleanup(), 60000);
-  }
-
-  isRateLimited(ip: string): boolean {
-    const now = Date.now();
-    const requestData = this.requests.get(ip) || { count: 0, timestamp: now };
-
-    // Reset if window has passed
-    if (now - requestData.timestamp > this.windowMs) {
-      requestData.count = 1;
-      requestData.timestamp = now;
-    } else {
-      requestData.count++;
-    }
-
-    this.requests.set(ip, requestData);
-    return requestData.count > this.limit;
+    
+    validRequests.push(now);
+    this.requests.set(clientIp, validRequests);
   }
 }
-
-export const rateLimiter = new RateLimiter();

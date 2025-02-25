@@ -1,26 +1,22 @@
 
+import { ChatRequest } from "./types.ts";
 import { ChatError } from "./error-handler.ts";
-import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
-export interface ChatRequest {
-  message: string;
-  history?: any[];
-}
+export async function validateRequest(req: Request): Promise<ChatRequest> {
+  try {
+    const body = await req.json();
+    
+    if (!body.message || typeof body.message !== 'string') {
+      throw new ChatError('Invalid message format', 400, 'Message must be a string');
+    }
 
-export function validateChatRequest(data: unknown): ChatRequest {
-  if (!data || typeof data !== 'object') {
-    throw new ChatError('Invalid request data', HTTP_STATUS.BAD_REQUEST);
+    const history = Array.isArray(body.history) ? body.history : [];
+    
+    return {
+      message: body.message,
+      history: history,
+    };
+  } catch (error) {
+    throw new ChatError('Invalid request format', 400, error.message);
   }
-
-  const request = data as ChatRequest;
-
-  if (!request.message || typeof request.message !== 'string') {
-    throw new ChatError(ERROR_MESSAGES.INVALID_MESSAGE, HTTP_STATUS.BAD_REQUEST);
-  }
-
-  if (request.history && !Array.isArray(request.history)) {
-    throw new ChatError(ERROR_MESSAGES.INVALID_HISTORY, HTTP_STATUS.BAD_REQUEST);
-  }
-
-  return request;
 }
