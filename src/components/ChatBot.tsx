@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,10 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
+      // Get the current session
+      const { error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
       const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
         body: { 
           message: userMessage,
@@ -48,10 +53,11 @@ export const ChatBot = () => {
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.content
           }))
-        },
+        }
       });
 
       if (error) {
+        console.error("Supabase function error:", error);
         if (error.message?.includes('high traffic')) {
           throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
         }
