@@ -1,5 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+/// <reference lib="deno.ns" />
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { ChatCompletionRequestMessage } from "./types.ts";
 import { OpenAIClient } from "./openai-client.ts";
@@ -53,7 +54,7 @@ serve(async (req) => {
         role: "system",
         content: "You are a friendly and knowledgeable coffee expert. Your goal is to help users learn about different coffee types, brewing methods, and find the perfect coffee match for their taste. Be concise but informative, and always maintain a helpful and positive tone.",
       },
-      ...(history || []),
+      ...(history as ChatCompletionRequestMessage[] || []),
       { role: "user", content: message },
     ];
 

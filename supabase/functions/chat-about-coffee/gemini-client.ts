@@ -1,4 +1,6 @@
 
+import { config } from "https://deno.land/x/dotenv/mod.ts";
+
 import { ChatCompletionRequestMessage } from "./types.ts";
 
 export class GeminiClient {

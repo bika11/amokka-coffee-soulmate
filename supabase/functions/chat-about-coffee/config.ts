@@ -1,4 +1,6 @@
 
+declare const Deno: any;
+
 export class Config {
   private static instance: Config;
   private readonly envVars: Map<string, string> = new Map();

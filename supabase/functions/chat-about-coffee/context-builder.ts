@@ -1,5 +1,5 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 import { ChatError } from "./error-handler.ts";
 import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
 
