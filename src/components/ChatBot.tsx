@@ -42,28 +42,28 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const { data, error } = await supabase.functions.invoke("chat-about-coffee", {
-        body: { 
+      // Make a direct fetch call to the edge function with the anon key
+      const response = await fetch('https://htgacpgppyjonzwkkntl.supabase.co/functions/v1/chat-about-coffee', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2FjcGdwcHlqb256d2trbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNDIwOTAsImV4cCI6MjA1MzcxODA5MH0.7cubJomcCG2eF0rv79m67XVQedZQ_NIYbYrY4IbSI2Y',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2FjcGdwcHlqb256d2trbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNDIwOTAsImV4cCI6MjA1MzcxODA5MH0.7cubJomcCG2eF0rv79m67XVQedZQ_NIYbYrY4IbSI2Y`
+        },
+        body: JSON.stringify({
           message: userMessage,
           history: messages.map(msg => ({
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.content
           }))
-        },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        }
+        })
       });
 
-      if (error) {
-        console.error("Supabase function error:", error);
-        if (error.message?.includes('high traffic')) {
-          throw new Error('We are experiencing high traffic. Please try again in a few minutes.');
-        }
-        throw error;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
 
       setMessages((prev) => [
         ...prev,
