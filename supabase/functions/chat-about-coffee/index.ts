@@ -5,12 +5,6 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { ChatCompletionRequestMessage } from "./types.ts";
 import { OpenAIClient } from "./openai-client.ts";
 import { GeminiClient } from "./gemini-client.ts";
-import { ChatError } from "./error-handler.ts";
-import { validateRequest } from "./request-validator.ts";
-import { RateLimiter } from "./rate-limiter.ts";
-import { ERROR_MESSAGES, HTTP_STATUS } from "./constants.ts";
-
-const rateLimiter = new RateLimiter();
 
 // Initialize Supabase client with admin privileges
 const supabaseClient = createClient(
@@ -46,19 +40,23 @@ URL: ${product.url}
 }
 
 serve(async (req) => {
+  // Always include CORS headers in the response
+  const headers = {
+    ...corsHeaders,
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers
     });
   }
 
   try {
-    const { message, history } = await validateRequest(req);
-
-    // Apply rate limiting
-    const clientIp = req.headers.get("x-real-ip") || "unknown";
-    await rateLimiter.checkRateLimit(clientIp);
+    // Parse the request body
+    const { message, history } = await req.json();
 
     // Get coffee products context
     const coffeeContext = await getCoffeeContext();
@@ -87,36 +85,19 @@ When discussing coffees, always refer to specific products from the list above. 
 
     return new Response(
       JSON.stringify({ response }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { headers }
     );
 
   } catch (error) {
     console.error("Error in chat-about-coffee function:", error);
 
-    if (error instanceof ChatError) {
-      return new Response(
-        JSON.stringify({ 
-          error: error.message,
-          details: error.details 
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: error.status,
-        }
-      );
-    }
-
     return new Response(
       JSON.stringify({ 
-        error: ERROR_MESSAGES.GENERAL_ERROR,
-        details: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : "An unexpected error occurred"
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      { 
+        status: 500,
+        headers 
       }
     );
   }
