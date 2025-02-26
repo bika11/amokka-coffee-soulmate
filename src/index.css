@@ -50,6 +50,10 @@
   * {
     @apply border-border;
   }
+  html, body {
+    height: 100vh;
+    overflow-y: hidden;
+  }
   body {
     @apply text-foreground;
     font-family: 'mabry-light-pro', sans-serif;
