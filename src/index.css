@@ -1,16 +1,16 @@
 
 @font-face {
-    font-family: 'mabry-regular-pro';
-    src: url('/mabry-regular-pro.otf') format('opentype');
+    font-family: 'mabry-light-pro';
+    src: url('/mabry-light-pro.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -52,7 +52,7 @@
   }
   body {
     @apply text-foreground;
-    font-family: 'mabry-regular-pro', sans-serif;
+    font-family: 'mabry-light-pro', sans-serif;
   }
 }
 
