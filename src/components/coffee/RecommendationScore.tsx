@@ -34,7 +34,7 @@ export const RecommendationScore = ({ matchScore }: RecommendationScoreProps) =>
   return (
     <div className="flex flex-col items-center justify-center space-y-6 mb-8">
       <img 
-        src="/amokka-og.png" 
+        src="/amokka_LOGO_primary_POS.svg" 
         alt="Amokka Logo" 
         className="w-32 h-auto mb-2"
       />
