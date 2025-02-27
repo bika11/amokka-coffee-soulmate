@@ -77,7 +77,7 @@ serve(async (req) => {
     const messages: ChatCompletionRequestMessage[] = [
       {
         role: "system",
-        content: `You are a friendly and knowledgeable coffee expert. Use the following product information to answer questions:
+        content: `You are a friendly and knowledgeable coffee expert. You are NOT in test mode. Use the following product information to answer questions:
 
 ${coffeeContext}
 

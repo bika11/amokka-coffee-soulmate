@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ChatMessage } from "./chat/ChatMessage";
@@ -22,7 +23,7 @@ export const ChatBot = () => {
     if (!isOpen) {
       setMessages([
         {
-          content: "Hi! I'm your coffee expert. I can help you learn about our coffees and find the perfect match for your taste. What would you like to know?",
+          content: "Hello! I'm your Amokka Coffee expert. Ask me anything about our delicious coffees!",
           role: "assistant",
         },
       ]);
@@ -31,37 +32,42 @@ export const ChatBot = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  supabase.auth.getSession()
+    .then(({ data: { session } }) => {
+      const headers = session?.access_token ? { Authorization: `Bearer ${session?.access_token}` } : 'No session token';
+      console.log("Invoking edge function with headers:", headers);
+    });
+  if (!input.trim()) return;
 
-    const userMessage = input.trim();
-    setInput("");
-    setMessages((prev) => [...prev, { content: userMessage, role: "user" }]);
-    setIsLoading(true);
+  const userMessage = input.trim();
+  setInput("");
+  setMessages((prev) => [...prev, { content: userMessage, role: "user" }]);
+  setIsLoading(true);
 
-    try {
-      // Use the AI client factory
-      const updatedMessages = [
-        ...messages,
-        { content: userMessage, role: "user" as const }
-      ];
-      
-      const response = await aiClient.getCompletion(updatedMessages);
-      
-      setMessages((prev) => [
-        ...prev,
-        { content: response, role: "assistant" },
-      ]);
-    } catch (error) {
-      console.error("Error getting response:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "I apologize, but I'm having trouble responding right now. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    // Use the AI client factory
+    const updatedMessages = [
+      ...messages,
+      { content: userMessage, role: "user" as const }
+    ];
+
+    const response = await aiClient.getCompletion(updatedMessages);
+
+    setMessages((prev) => [
+      ...prev,
+      { content: response, role: "assistant" },
+    ]);
+  } catch (error) {
+    console.error("Error getting response:", error);
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "I apologize, but I'm having trouble responding right now. Please try again later.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="absolute bottom-4 right-4">
