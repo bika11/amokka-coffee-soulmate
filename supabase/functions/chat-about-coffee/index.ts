@@ -90,6 +90,7 @@ When discussing coffees, always refer to specific products from the list above. 
     
     // Get AI completion
     console.log("Initializing AI client...");
+    // @ts-ignore
     console.log("Using AI client type:", Deno.env.get("GEMINI_API_KEY") ? "Gemini" : "OpenAI");
     console.log("Getting AI completion...");
     const response = await aiClient.getCompletion(messages);
