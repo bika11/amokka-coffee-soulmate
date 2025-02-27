@@ -116,19 +116,42 @@ export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIC
     // Use edge function instead of direct API calls from browser
     return {
       async getCompletion(messages: Message[]): Promise<string> {
-        const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
-          body: {
-            message: messages[messages.length - 1].content,
-            history: messages.slice(0, -1)
+        try {
+          console.log("Calling Supabase Edge Function with messages:", messages.length);
+          
+          // Direct fetch call with proper headers instead of supabase.functions.invoke
+          // This ensures we have full control over the headers
+          const response = await fetch('https://htgacpgppyjonzwkkntl.supabase.co/functions/v1/chat-about-coffee', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // Get the Authorization header from the Supabase client
+              'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token || '')}`,
+              // Add the anonymous key from Supabase
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2FjcGdwcHlqb256d2trbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNDIwOTAsImV4cCI6MjA1MzcxODA5MH0.7cubJomcCG2eF0rv79m67XVQedZQ_NIYbYrY4IbSI2Y',
+              // Add client info header
+              'X-Client-Info': 'supabase-js-web/2.49.1'
+            },
+            body: JSON.stringify({
+              message: messages[messages.length - 1].content,
+              history: messages.slice(0, -1)
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Edge function error (${response.status}):`, errorText);
+            throw new Error(`Failed to call edge function: ${response.statusText}`);
           }
-        });
-        
-        if (error) {
+          
+          const data = await response.json();
+          console.log("Edge function response received");
+          
+          return data.response;
+        } catch (error) {
           console.error("Error calling edge function:", error);
           throw error;
         }
-        
-        return data.response;
       }
     };
   }
