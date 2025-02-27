@@ -44,17 +44,35 @@ URL: ${product.url}
 }
 
 serve(async (req) => {
+  // Always include CORS headers in the response
+  const headers = {
+    ...corsHeaders,
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers
+    });
   }
 
   try {
     console.log("Starting try block in serve function...");
+    
+    // Parse request body
+    console.log("Parsing request body...");
     const { message, history } = await req.json();
-    console.log("Request body parsed.");
-    console.log("Request body parsed.");
+    console.log("Request body parsed:", { messageLength: message?.length, historyLength: history?.length });
+    
+    // Get coffee context
+    console.log("Fetching coffee context...");
     const coffeeContext = await getCoffeeContext();
-
+    console.log("Coffee context fetched, length:", coffeeContext.length);
+    
+    // Prepare messages
+    console.log("Preparing messages for AI...");
     const messages: ChatCompletionRequestMessage[] = [
       {
         role: "system",
@@ -67,8 +85,14 @@ When discussing coffees, always refer to specific products from the list above. 
       ...history,
       { role: "user", content: message },
     ];
-
+    console.log("Messages prepared, count:", messages.length);
+    
+    // Get AI completion
+    console.log("Initializing AI client...");
+    console.log("Using AI client type:", Deno.env.get("GEMINI_API_KEY") ? "Gemini" : "OpenAI");
+    console.log("Getting AI completion...");
     const response = await aiClient.getCompletion(messages);
+    console.log("AI completion received, length:", response.length);
 
     return new Response(
       JSON.stringify({ response }),
@@ -76,7 +100,8 @@ When discussing coffees, always refer to specific products from the list above. 
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in chat-about-coffee function:', error);
+    console.error('Detailed error:', error.stack);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
