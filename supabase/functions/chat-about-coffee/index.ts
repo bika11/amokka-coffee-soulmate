@@ -57,12 +57,13 @@ URL: ${product.url}
 
 serve(async (req) => {
   console.log(`${req.method} request to ${req.url}`);
-  
+  const origin = req.headers.get('origin');
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers: corsHeaders(origin)
     });
   }
 
@@ -103,10 +104,10 @@ When discussing coffees, always refer to specific products from the list above. 
     return new Response(
       JSON.stringify({ response }),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+        headers: {
+          ...corsHeaders(origin),
+          'Content-Type': 'application/json'
+        }
       }
     );
   } catch (error) {
@@ -116,10 +117,10 @@ When discussing coffees, always refer to specific products from the list above. 
     return new Response(
       JSON.stringify({ error: error.message || "An unexpected error occurred" }),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }, 
+        headers: {
+          ...corsHeaders(origin),
+          'Content-Type': 'application/json'
+        },
         status: 500 
       }
     );
