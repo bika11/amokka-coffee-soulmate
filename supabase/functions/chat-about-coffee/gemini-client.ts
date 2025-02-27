@@ -25,31 +25,49 @@ export class GeminiClient {
           msg.content;
     }).join('\n');
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.apiKey}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
+    try {
+      console.log("Making request to Gemini API");
+      // Updated URL to use the correct Gemini API endpoint
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
+      if (!response.ok) {
+        console.error(`Gemini API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`Error details: ${errorText}`);
+        throw new Error(`Gemini API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Gemini API response received");
+      
+      // Check if the response has the expected structure
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+        console.error("Unexpected response structure from Gemini API:", JSON.stringify(data));
+        throw new Error("Unexpected response structure from Gemini API");
+      }
+      
+      return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      console.error("Error in Gemini API call:", error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
   }
 }
