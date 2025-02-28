@@ -1,9 +1,10 @@
 
 import { AIClient, Message } from "@/interfaces/ai-client.interface";
 import { supabase } from "@/integrations/supabase/client";
+import { COFFEES } from "@/lib/coffee-data";
 
 /**
- * OpenAI Client implementation
+ * OpenAI Client implementation for server-side usage
  */
 export class OpenAIClient implements AIClient {
   private apiKey: string;
@@ -41,7 +42,7 @@ export class OpenAIClient implements AIClient {
 }
 
 /**
- * Gemini Client implementation
+ * Gemini Client implementation for server-side usage
  */
 export class GeminiClient implements AIClient {
   private apiKey: string;
@@ -104,91 +105,112 @@ export class GeminiClient implements AIClient {
 }
 
 /**
- * Mock AI client for testing without real API calls
- * This provides a fallback when edge functions aren't working
+ * Client-side AI implementation that uses embedded knowledge about coffees
  */
-class MockAIClient implements AIClient {
+class LocalAIClient implements AIClient {
   async getCompletion(messages: Message[]): Promise<string> {
-    console.log("Using mock AI client as fallback");
-    const userMessage = messages[messages.length - 1].content;
+    const userMessage = messages[messages.length - 1].content.toLowerCase();
     
-    // Generate simple responses based on keywords in the user's message
-    if (userMessage.toLowerCase().includes("coffee")) {
-      return "I love coffee! Our Amokka Coffee Selection includes various roasts from light to dark, with options like Ethiopia Haji Suleiman for fruity notes or Indonesia Mandheling for a bold earthy flavor.";
-    } else if (userMessage.toLowerCase().includes("recommend")) {
-      return "Based on general preferences, I'd recommend trying our Ethiopia Haji Suleiman if you enjoy fruity notes, or Indonesia Mandheling if you prefer earthy tones. For specific recommendations, please share your taste preferences.";
-    } else if (userMessage.toLowerCase().includes("price") || userMessage.toLowerCase().includes("cost")) {
-      return "Our coffee prices range from $14.99 to $24.99 depending on the origin and roast level. We also offer subscription options that can save you 10-15% on recurring orders.";
-    } else if (userMessage.toLowerCase().includes("hi") || userMessage.toLowerCase().includes("hello")) {
-      return "Hello! I'm your Amokka Coffee assistant. How can I help you today? Would you like to learn about our coffee selection or brewing methods?";
-    } else {
-      return "I'm here to help with all your coffee questions! Feel free to ask about our different coffees, brewing methods, or recommendations based on your taste preferences.";
+    // Create a context based on our coffee data
+    const coffeeContext = COFFEES.map(coffee => 
+      `${coffee.name}: ${coffee.description} (Roast Level: ${coffee.roastLevel}/6, Flavors: ${coffee.flavorNotes.join(', ')})`
+    ).join('\n\n');
+    
+    // Generate a prompt that uses our embedded coffee knowledge
+    const prompt = `
+You are a helpful assistant for Amokka Coffee. Respond to the customer query using information about our available coffees:
+
+${coffeeContext}
+
+Customer query: ${userMessage}
+
+Provide a helpful, concise response about our coffees based on this information. If appropriate, recommend specific coffees from our selection. If you don't know the answer to a specific question, suggest the customer contact us directly.
+
+Your response should be friendly and conversational, but focus on providing accurate information about our coffees.
+`;
+
+    try {
+      // Try to use the Supabase edge function
+      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
+        body: { 
+          message: prompt,
+          isDirectPrompt: true 
+        }
+      });
+      
+      if (error) {
+        console.error("Supabase edge function error:", error);
+        // Fall back to local processing
+        return this.generateLocalResponse(userMessage);
+      }
+      
+      if (data && data.response) {
+        return data.response;
+      } else {
+        console.warn("No valid response from edge function, using local processing");
+        return this.generateLocalResponse(userMessage);
+      }
+    } catch (error) {
+      console.error("Error calling edge function:", error);
+      return this.generateLocalResponse(userMessage);
     }
+  }
+  
+  private generateLocalResponse(userMessage: string): string {
+    // Look for specific keywords and provide relevant responses
+    if (userMessage.includes('recommend') || userMessage.includes('suggest')) {
+      const topCoffees = COFFEES.filter(c => c.priority <= 3);
+      return `Based on popularity, I'd recommend trying these coffees:\n\n${topCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
+    }
+    
+    // Check for mentions of specific coffees
+    for (const coffee of COFFEES) {
+      if (userMessage.includes(coffee.name.toLowerCase())) {
+        return `**${coffee.name}** is a great choice! ${coffee.description}\n\nIt has flavor notes of ${coffee.flavorNotes.join(', ')} with a ${coffee.roastLevel <= 2 ? 'light' : coffee.roastLevel <= 4 ? 'medium' : 'dark'} roast profile.`;
+      }
+    }
+    
+    // Check for flavor preferences
+    const flavorMentions: Record<string, boolean> = {};
+    for (const coffee of COFFEES) {
+      for (const flavor of coffee.flavorNotes) {
+        if (userMessage.includes(flavor.toLowerCase())) {
+          flavorMentions[flavor] = true;
+        }
+      }
+    }
+    
+    if (Object.keys(flavorMentions).length > 0) {
+      const flavors = Object.keys(flavorMentions);
+      const matchingCoffees = COFFEES.filter(coffee => 
+        flavors.some(flavor => coffee.flavorNotes.includes(flavor as any))
+      );
+      
+      if (matchingCoffees.length > 0) {
+        return `For ${flavors.join(' and ')} flavors, these coffees would be perfect:\n\n${matchingCoffees.slice(0, 3).map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
+      }
+    }
+    
+    // Default welcoming response
+    return "Welcome to Amokka Coffee! We offer a range of specialty coffees with unique flavor profiles. You can ask about specific coffees, flavors you enjoy, or request recommendations based on your preferences. How can I help you find your perfect coffee?";
   }
 }
 
 /**
  * Factory function to create the appropriate AI client
- * Defaults to using the environment configuration when running on Edge Functions
- * @param type Optional: Force a specific client type
- * @param apiKey Optional: Provide an API key directly instead of using environment variables
- * @returns An instance of AIClient
  */
-export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIClient {
-  // When running in browser context with Supabase
+export function createAIClient(): AIClient {
+  // In browser context, always use the local client
   if (typeof window !== 'undefined') {
-    return {
-      async getCompletion(messages: Message[]): Promise<string> {
-        try {
-          console.log("Starting AI completion request with messages:", messages.length);
-          
-          // Using the Supabase client directly for edge function invocation
-          const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
-            body: {
-              message: messages[messages.length - 1].content,
-              history: messages.slice(0, -1)
-            }
-          });
-          
-          if (error) {
-            console.error("Supabase edge function error:", error);
-            // Fall back to the mock client when the edge function fails
-            const mockClient = new MockAIClient();
-            return mockClient.getCompletion(messages);
-          }
-          
-          console.log("Edge function response received:", data);
-          
-          if (data && data.response) {
-            return data.response;
-          } else {
-            console.warn("No valid response from edge function, using fallback");
-            const mockClient = new MockAIClient();
-            return mockClient.getCompletion(messages);
-          }
-        } catch (error) {
-          console.error("Error calling edge function:", error);
-          // Fall back to the mock client when errors occur
-          const mockClient = new MockAIClient();
-          return mockClient.getCompletion(messages);
-        }
-      }
-    };
+    return new LocalAIClient();
   }
   
-  // When running in Edge Function context
-  // This code path only executes in the Edge Function
-  if (type === 'gemini' || (!type && process.env.GEMINI_API_KEY)) {
-    const key = apiKey || process.env.GEMINI_API_KEY;
-    if (!key) {
-      throw new Error("GEMINI_API_KEY is not set");
-    }
-    return new GeminiClient(key);
+  // Server-side context (Edge Functions)
+  if (process.env.GEMINI_API_KEY) {
+    return new GeminiClient(process.env.GEMINI_API_KEY);
+  } else if (process.env.OPENAI_API_KEY) {
+    return new OpenAIClient(process.env.OPENAI_API_KEY);
   } else {
-    const key = apiKey || process.env.OPENAI_API_KEY;
-    if (!key) {
-      throw new Error("OPENAI_API_KEY is not set");
-    }
-    return new OpenAIClient(key);
+    throw new Error("No API keys found for AI services");
   }
 }
