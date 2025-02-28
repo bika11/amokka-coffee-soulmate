@@ -1,10 +1,9 @@
 
 import { AIClient, Message } from "@/interfaces/ai-client.interface";
 import { supabase } from "@/integrations/supabase/client";
-import { COFFEES } from "@/lib/coffee-data";
 
 /**
- * OpenAI Client implementation for server-side usage
+ * OpenAI Client implementation
  */
 export class OpenAIClient implements AIClient {
   private apiKey: string;
@@ -42,7 +41,7 @@ export class OpenAIClient implements AIClient {
 }
 
 /**
- * Gemini Client implementation for server-side usage
+ * Gemini Client implementation
  */
 export class GeminiClient implements AIClient {
   private apiKey: string;
@@ -105,189 +104,74 @@ export class GeminiClient implements AIClient {
 }
 
 /**
- * Client-side AI implementation that uses embedded knowledge about coffees
- */
-class LocalAIClient implements AIClient {
-  private conversationContext: Message[] = [];
-  
-  // Analyze the conversation to maintain context and provide relevant responses
-  private analyzeConversation(messages: Message[]): string {
-    // Store the conversation for context tracking
-    this.conversationContext = messages;
-    
-    // Get latest user message
-    const userMessage = messages[messages.length - 1].content.toLowerCase();
-    
-    // Check for organic coffee questions
-    if (userMessage.includes('organic')) {
-      // Find organic coffees in our inventory
-      const organicCoffees = COFFEES.filter(coffee => 
-        coffee.name.toLowerCase().includes('organic') ||
-        coffee.description.toLowerCase().includes('organic')
-      );
-      
-      if (organicCoffees.length > 0) {
-        return `Yes, we do have organic coffee options! Here are our organic offerings:\n\n${organicCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}\n\nOur Treehugger Organic Blend is especially popular among customers who prefer organic coffee.`;
-      } else {
-        return "Yes, we have the Treehugger Organic Blend which is certified organic. It features nutty and chocolate notes with a medium roast profile that makes it perfect for both espresso and filter brewing methods.";
-      }
-    }
-    
-    // Check for roast level questions
-    if (userMessage.includes('light roast') || (userMessage.includes('light') && userMessage.includes('roast'))) {
-      const lightRoasts = COFFEES.filter(coffee => coffee.roastLevel <= 2);
-      return `For light roasts, we recommend:\n\n${lightRoasts.map(c => `**${c.name}**: ${c.description} (Roast Level: ${c.roastLevel}/6)`).join('\n\n')}`;
-    }
-    
-    if (userMessage.includes('medium roast') || (userMessage.includes('medium') && userMessage.includes('roast'))) {
-      const mediumRoasts = COFFEES.filter(coffee => coffee.roastLevel > 2 && coffee.roastLevel <= 4);
-      return `For medium roasts, we recommend:\n\n${mediumRoasts.map(c => `**${c.name}**: ${c.description} (Roast Level: ${c.roastLevel}/6)`).join('\n\n')}`;
-    }
-    
-    if (userMessage.includes('dark roast') || (userMessage.includes('dark') && userMessage.includes('roast'))) {
-      const darkRoasts = COFFEES.filter(coffee => coffee.roastLevel > 4);
-      return `For dark roasts, we recommend:\n\n${darkRoasts.map(c => `**${c.name}**: ${c.description} (Roast Level: ${c.roastLevel}/6)`).join('\n\n')}`;
-    }
-    
-    // Check for origins questions
-    if (userMessage.includes('ethiopia') || userMessage.includes('ethiopian')) {
-      const ethiopianCoffees = COFFEES.filter(coffee => 
-        coffee.name.toLowerCase().includes('ethiopia') || 
-        coffee.description.toLowerCase().includes('ethiopia')
-      );
-      
-      if (ethiopianCoffees.length > 0) {
-        return `We offer these Ethiopian coffees:\n\n${ethiopianCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
-      } else {
-        return "Our Ethiopia Haji Suleiman is a light roast with bright fruity notes and floral characteristics, typical of high-quality Ethiopian coffees.";
-      }
-    }
-    
-    if (userMessage.includes('peru') || userMessage.includes('peruvian')) {
-      const peruvianCoffees = COFFEES.filter(coffee => 
-        coffee.name.toLowerCase().includes('peru') || 
-        coffee.description.toLowerCase().includes('peru')
-      );
-      
-      if (peruvianCoffees.length > 0) {
-        return `We offer these Peruvian coffees:\n\n${peruvianCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
-      }
-    }
-    
-    if (userMessage.includes('indonesia') || userMessage.includes('indonesian') || userMessage.includes('mandheling')) {
-      const indonesianCoffees = COFFEES.filter(coffee => 
-        coffee.name.toLowerCase().includes('indonesia') || 
-        coffee.description.toLowerCase().includes('indonesia')
-      );
-      
-      if (indonesianCoffees.length > 0) {
-        return `We offer these Indonesian coffees:\n\n${indonesianCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
-      }
-    }
-    
-    // Check for flavor questions
-    if (userMessage.includes('flavor') || userMessage.includes('flavour') || 
-        userMessage.includes('taste') || userMessage.includes('notes')) {
-      // Check previous context to see if a specific coffee was mentioned
-      let specificCoffee = null;
-      
-      for (let i = messages.length - 2; i >= 0; i--) {
-        const prevMsg = messages[i].content.toLowerCase();
-        for (const coffee of COFFEES) {
-          if (prevMsg.includes(coffee.name.toLowerCase())) {
-            specificCoffee = coffee;
-            break;
-          }
-        }
-        if (specificCoffee) break;
-      }
-      
-      if (specificCoffee) {
-        return `**${specificCoffee.name}** features flavor notes of ${specificCoffee.flavorNotes.join(', ')}. ${specificCoffee.description}`;
-      }
-    }
-    
-    // Check for greetings
-    if (userMessage.includes('hi') || userMessage.includes('hello') || 
-        userMessage.includes('hey') || userMessage.includes('morning') || 
-        userMessage.includes('afternoon') || userMessage.includes('evening')) {
-      return "Hello! I'm your Amokka Coffee assistant. I can help you find the perfect coffee based on your taste preferences. Are you looking for something specific like light roasts, dark roasts, or coffees with particular flavor notes?";
-    }
-    
-    // Check for recommended/popular coffees
-    if (userMessage.includes('recommend') || userMessage.includes('popular') || 
-        userMessage.includes('best seller') || userMessage.includes('bestseller')) {
-      const popularCoffees = COFFEES.filter(c => c.priority <= 3);
-      return `Our most popular coffees are:\n\n${popularCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}\n\nWould you like more details about any of these?`;
-    }
-    
-    // Check for specific coffee mentions
-    for (const coffee of COFFEES) {
-      if (userMessage.includes(coffee.name.toLowerCase())) {
-        return `**${coffee.name}** is a ${coffee.roastLevel <= 2 ? 'light' : coffee.roastLevel <= 4 ? 'medium' : 'dark'} roast with flavor notes of ${coffee.flavorNotes.join(', ')}. ${coffee.description}`;
-      }
-    }
-    
-    // Check for flavor profile mentions
-    for (const coffee of COFFEES) {
-      for (const flavor of coffee.flavorNotes) {
-        if (userMessage.includes(flavor.toLowerCase())) {
-          const matchingCoffees = COFFEES.filter(c => c.flavorNotes.includes(flavor));
-          if (matchingCoffees.length > 0) {
-            return `For ${flavor} flavor notes, I recommend:\n\n${matchingCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
-          }
-        }
-      }
-    }
-    
-    // Default response if no specific pattern is matched
-    return "I'd be happy to help you find the perfect coffee! You can ask about our different roast levels (light, medium, dark), specific flavor profiles (chocolate, fruity, nutty, etc.), or our most popular options. What kind of coffee experience are you looking for?";
-  }
-  
-  async getCompletion(messages: Message[]): Promise<string> {
-    console.log("LocalAIClient processing messages:", messages.length);
-    
-    try {
-      // First try the edge function
-      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
-        body: { 
-          messages: messages
-        }
-      });
-      
-      if (!error && data && data.response) {
-        console.log("Edge function response received");
-        return data.response;
-      }
-      
-      // If edge function fails, fall back to local analysis
-      console.log("Using local analysis fallback");
-      return this.analyzeConversation(messages);
-      
-    } catch (error) {
-      console.error("Error in AI processing:", error);
-      // Fall back to local analysis
-      console.log("Error occurred, using local analysis fallback");
-      return this.analyzeConversation(messages);
-    }
-  }
-}
-
-/**
  * Factory function to create the appropriate AI client
+ * Defaults to using the environment configuration when running on Edge Functions
+ * @param type Optional: Force a specific client type
+ * @param apiKey Optional: Provide an API key directly instead of using environment variables
+ * @returns An instance of AIClient
  */
-export function createAIClient(): AIClient {
-  // In browser context, always use the local client
+export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIClient {
+  // When running in browser context with Supabase
   if (typeof window !== 'undefined') {
-    return new LocalAIClient();
+    // Use edge function instead of direct API calls from browser
+    return {
+      async getCompletion(messages: Message[]): Promise<string> {
+        try {
+          console.log("Calling Supabase Edge Function with messages:", messages.length);
+          
+          // First get the session token
+          const { data } = await supabase.auth.getSession();
+          const sessionToken = data.session?.access_token || '';
+          
+          // Direct fetch call with proper headers instead of supabase.functions.invoke
+          const response = await fetch('https://htgacpgppyjonzwkkntl.supabase.co/functions/v1/chat-about-coffee', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // Use the retrieved token
+              'Authorization': sessionToken ? `Bearer ${sessionToken}` : '',
+              // Add the anonymous key from Supabase
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2FjcGdwcHlqb256d2trbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNDIwOTAsImV4cCI6MjA1MzcxODA5MH0.7cubJomcCG2eF0rv79m67XVQedZQ_NIYbYrY4IbSI2Y',
+              // Add client info header
+              'X-Client-Info': 'supabase-js-web/2.49.1'
+            },
+            body: JSON.stringify({
+              message: messages[messages.length - 1].content,
+              history: messages.slice(0, -1)
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Edge function error (${response.status}):`, errorText);
+            throw new Error(`Failed to call edge function: ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log("Edge function response received");
+          
+          return data.response;
+        } catch (error) {
+          console.error("Error calling edge function:", error);
+          throw error;
+        }
+      }
+    };
   }
   
-  // Server-side context (Edge Functions)
-  if (process.env.GEMINI_API_KEY) {
-    return new GeminiClient(process.env.GEMINI_API_KEY);
-  } else if (process.env.OPENAI_API_KEY) {
-    return new OpenAIClient(process.env.OPENAI_API_KEY);
+  // When running in Edge Function context
+  // This code path only executes in the Edge Function
+  if (type === 'gemini' || (!type && process.env.GEMINI_API_KEY)) {
+    const key = apiKey || process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error("GEMINI_API_KEY is not set");
+    }
+    return new GeminiClient(key);
   } else {
-    throw new Error("No API keys found for AI services");
+    const key = apiKey || process.env.OPENAI_API_KEY;
+    if (!key) {
+      throw new Error("OPENAI_API_KEY is not set");
+    }
+    return new OpenAIClient(key);
   }
 }

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ChatMessage } from "./chat/ChatMessage";
@@ -31,46 +32,42 @@ export const ChatBot = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  supabase.auth.getSession()
+    .then(({ data: { session } }) => {
+      const headers = session?.access_token ? { Authorization: `Bearer ${session?.access_token}` } : 'No session token';
+      console.log("Invoking edge function with headers:", headers);
+    });
+  if (!input.trim()) return;
 
-    const userMessage = input.trim();
-    setInput("");
-    setMessages((prev) => [...prev, { content: userMessage, role: "user" }]);
-    setIsLoading(true);
+  const userMessage = input.trim();
+  setInput("");
+  setMessages((prev) => [...prev, { content: userMessage, role: "user" }]);
+  setIsLoading(true);
 
-    try {
-      // Get all messages for context
-      const updatedMessages = [
-        ...messages,
-        { content: userMessage, role: "user" as const }
-      ];
+  try {
+    // Use the AI client factory
+    const updatedMessages = [
+      ...messages,
+      { content: userMessage, role: "user" as const }
+    ];
 
-      const response = await aiClient.getCompletion(updatedMessages);
+    const response = await aiClient.getCompletion(updatedMessages);
 
-      setMessages((prev) => [
-        ...prev,
-        { content: response, role: "assistant" },
-      ]);
-    } catch (error) {
-      console.error("Error getting response:", error);
-      toast({
-        title: "Error",
-        description: "I apologize, but I'm having trouble responding right now. Please try again later.",
-        variant: "destructive",
-      });
-      
-      // Add a fallback response so the user isn't left hanging
-      setMessages((prev) => [
-        ...prev,
-        { 
-          content: "I apologize, but I'm having trouble connecting to our knowledge base right now. Please try again in a moment.", 
-          role: "assistant" 
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    setMessages((prev) => [
+      ...prev,
+      { content: response, role: "assistant" },
+    ]);
+  } catch (error) {
+    console.error("Error getting response:", error);
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "I apologize, but I'm having trouble responding right now. Please try again later.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="absolute bottom-4 right-4">
