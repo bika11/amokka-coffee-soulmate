@@ -108,91 +108,168 @@ export class GeminiClient implements AIClient {
  * Client-side AI implementation that uses embedded knowledge about coffees
  */
 class LocalAIClient implements AIClient {
-  async getCompletion(messages: Message[]): Promise<string> {
+  private conversationContext: Message[] = [];
+  
+  // Analyze the conversation to maintain context and provide relevant responses
+  private analyzeConversation(messages: Message[]): string {
+    // Store the conversation for context tracking
+    this.conversationContext = messages;
+    
+    // Get latest user message
     const userMessage = messages[messages.length - 1].content.toLowerCase();
     
-    // Create a context based on our coffee data
-    const coffeeContext = COFFEES.map(coffee => 
-      `${coffee.name}: ${coffee.description} (Roast Level: ${coffee.roastLevel}/6, Flavors: ${coffee.flavorNotes.join(', ')})`
-    ).join('\n\n');
-    
-    // Generate a prompt that uses our embedded coffee knowledge
-    const prompt = `
-You are a helpful assistant for Amokka Coffee. Respond to the customer query using information about our available coffees:
-
-${coffeeContext}
-
-Customer query: ${userMessage}
-
-Provide a helpful, concise response about our coffees based on this information. If appropriate, recommend specific coffees from our selection. If you don't know the answer to a specific question, suggest the customer contact us directly.
-
-Your response should be friendly and conversational, but focus on providing accurate information about our coffees.
-`;
-
-    try {
-      // Try to use the Supabase edge function
-      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
-        body: { 
-          message: prompt,
-          isDirectPrompt: true 
-        }
-      });
+    // Check for organic coffee questions
+    if (userMessage.includes('organic')) {
+      // Find organic coffees in our inventory
+      const organicCoffees = COFFEES.filter(coffee => 
+        coffee.name.toLowerCase().includes('organic') ||
+        coffee.description.toLowerCase().includes('organic')
+      );
       
-      if (error) {
-        console.error("Supabase edge function error:", error);
-        // Fall back to local processing
-        return this.generateLocalResponse(userMessage);
-      }
-      
-      if (data && data.response) {
-        return data.response;
+      if (organicCoffees.length > 0) {
+        return `Yes, we do have organic coffee options! Here are our organic offerings:\n\n${organicCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}\n\nOur Treehugger Organic Blend is especially popular among customers who prefer organic coffee.`;
       } else {
-        console.warn("No valid response from edge function, using local processing");
-        return this.generateLocalResponse(userMessage);
+        return "Yes, we have the Treehugger Organic Blend which is certified organic. It features nutty and chocolate notes with a medium roast profile that makes it perfect for both espresso and filter brewing methods.";
       }
-    } catch (error) {
-      console.error("Error calling edge function:", error);
-      return this.generateLocalResponse(userMessage);
-    }
-  }
-  
-  private generateLocalResponse(userMessage: string): string {
-    // Look for specific keywords and provide relevant responses
-    if (userMessage.includes('recommend') || userMessage.includes('suggest')) {
-      const topCoffees = COFFEES.filter(c => c.priority <= 3);
-      return `Based on popularity, I'd recommend trying these coffees:\n\n${topCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
     }
     
-    // Check for mentions of specific coffees
+    // Check for roast level questions
+    if (userMessage.includes('light roast') || (userMessage.includes('light') && userMessage.includes('roast'))) {
+      const lightRoasts = COFFEES.filter(coffee => coffee.roastLevel <= 2);
+      return `For light roasts, we recommend:\n\n${lightRoasts.map(c => `**${c.name}**: ${c.description} (Roast Level: ${c.roastLevel}/6)`).join('\n\n')}`;
+    }
+    
+    if (userMessage.includes('medium roast') || (userMessage.includes('medium') && userMessage.includes('roast'))) {
+      const mediumRoasts = COFFEES.filter(coffee => coffee.roastLevel > 2 && coffee.roastLevel <= 4);
+      return `For medium roasts, we recommend:\n\n${mediumRoasts.map(c => `**${c.name}**: ${c.description} (Roast Level: ${c.roastLevel}/6)`).join('\n\n')}`;
+    }
+    
+    if (userMessage.includes('dark roast') || (userMessage.includes('dark') && userMessage.includes('roast'))) {
+      const darkRoasts = COFFEES.filter(coffee => coffee.roastLevel > 4);
+      return `For dark roasts, we recommend:\n\n${darkRoasts.map(c => `**${c.name}**: ${c.description} (Roast Level: ${c.roastLevel}/6)`).join('\n\n')}`;
+    }
+    
+    // Check for origins questions
+    if (userMessage.includes('ethiopia') || userMessage.includes('ethiopian')) {
+      const ethiopianCoffees = COFFEES.filter(coffee => 
+        coffee.name.toLowerCase().includes('ethiopia') || 
+        coffee.description.toLowerCase().includes('ethiopia')
+      );
+      
+      if (ethiopianCoffees.length > 0) {
+        return `We offer these Ethiopian coffees:\n\n${ethiopianCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
+      } else {
+        return "Our Ethiopia Haji Suleiman is a light roast with bright fruity notes and floral characteristics, typical of high-quality Ethiopian coffees.";
+      }
+    }
+    
+    if (userMessage.includes('peru') || userMessage.includes('peruvian')) {
+      const peruvianCoffees = COFFEES.filter(coffee => 
+        coffee.name.toLowerCase().includes('peru') || 
+        coffee.description.toLowerCase().includes('peru')
+      );
+      
+      if (peruvianCoffees.length > 0) {
+        return `We offer these Peruvian coffees:\n\n${peruvianCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
+      }
+    }
+    
+    if (userMessage.includes('indonesia') || userMessage.includes('indonesian') || userMessage.includes('mandheling')) {
+      const indonesianCoffees = COFFEES.filter(coffee => 
+        coffee.name.toLowerCase().includes('indonesia') || 
+        coffee.description.toLowerCase().includes('indonesia')
+      );
+      
+      if (indonesianCoffees.length > 0) {
+        return `We offer these Indonesian coffees:\n\n${indonesianCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
+      }
+    }
+    
+    // Check for flavor questions
+    if (userMessage.includes('flavor') || userMessage.includes('flavour') || 
+        userMessage.includes('taste') || userMessage.includes('notes')) {
+      // Check previous context to see if a specific coffee was mentioned
+      let specificCoffee = null;
+      
+      for (let i = messages.length - 2; i >= 0; i--) {
+        const prevMsg = messages[i].content.toLowerCase();
+        for (const coffee of COFFEES) {
+          if (prevMsg.includes(coffee.name.toLowerCase())) {
+            specificCoffee = coffee;
+            break;
+          }
+        }
+        if (specificCoffee) break;
+      }
+      
+      if (specificCoffee) {
+        return `**${specificCoffee.name}** features flavor notes of ${specificCoffee.flavorNotes.join(', ')}. ${specificCoffee.description}`;
+      }
+    }
+    
+    // Check for greetings
+    if (userMessage.includes('hi') || userMessage.includes('hello') || 
+        userMessage.includes('hey') || userMessage.includes('morning') || 
+        userMessage.includes('afternoon') || userMessage.includes('evening')) {
+      return "Hello! I'm your Amokka Coffee assistant. I can help you find the perfect coffee based on your taste preferences. Are you looking for something specific like light roasts, dark roasts, or coffees with particular flavor notes?";
+    }
+    
+    // Check for recommended/popular coffees
+    if (userMessage.includes('recommend') || userMessage.includes('popular') || 
+        userMessage.includes('best seller') || userMessage.includes('bestseller')) {
+      const popularCoffees = COFFEES.filter(c => c.priority <= 3);
+      return `Our most popular coffees are:\n\n${popularCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}\n\nWould you like more details about any of these?`;
+    }
+    
+    // Check for specific coffee mentions
     for (const coffee of COFFEES) {
       if (userMessage.includes(coffee.name.toLowerCase())) {
-        return `**${coffee.name}** is a great choice! ${coffee.description}\n\nIt has flavor notes of ${coffee.flavorNotes.join(', ')} with a ${coffee.roastLevel <= 2 ? 'light' : coffee.roastLevel <= 4 ? 'medium' : 'dark'} roast profile.`;
+        return `**${coffee.name}** is a ${coffee.roastLevel <= 2 ? 'light' : coffee.roastLevel <= 4 ? 'medium' : 'dark'} roast with flavor notes of ${coffee.flavorNotes.join(', ')}. ${coffee.description}`;
       }
     }
     
-    // Check for flavor preferences
-    const flavorMentions: Record<string, boolean> = {};
+    // Check for flavor profile mentions
     for (const coffee of COFFEES) {
       for (const flavor of coffee.flavorNotes) {
         if (userMessage.includes(flavor.toLowerCase())) {
-          flavorMentions[flavor] = true;
+          const matchingCoffees = COFFEES.filter(c => c.flavorNotes.includes(flavor));
+          if (matchingCoffees.length > 0) {
+            return `For ${flavor} flavor notes, I recommend:\n\n${matchingCoffees.map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
+          }
         }
       }
     }
     
-    if (Object.keys(flavorMentions).length > 0) {
-      const flavors = Object.keys(flavorMentions);
-      const matchingCoffees = COFFEES.filter(coffee => 
-        flavors.some(flavor => coffee.flavorNotes.includes(flavor as any))
-      );
-      
-      if (matchingCoffees.length > 0) {
-        return `For ${flavors.join(' and ')} flavors, these coffees would be perfect:\n\n${matchingCoffees.slice(0, 3).map(c => `**${c.name}**: ${c.description}`).join('\n\n')}`;
-      }
-    }
+    // Default response if no specific pattern is matched
+    return "I'd be happy to help you find the perfect coffee! You can ask about our different roast levels (light, medium, dark), specific flavor profiles (chocolate, fruity, nutty, etc.), or our most popular options. What kind of coffee experience are you looking for?";
+  }
+  
+  async getCompletion(messages: Message[]): Promise<string> {
+    console.log("LocalAIClient processing messages:", messages.length);
     
-    // Default welcoming response
-    return "Welcome to Amokka Coffee! We offer a range of specialty coffees with unique flavor profiles. You can ask about specific coffees, flavors you enjoy, or request recommendations based on your preferences. How can I help you find your perfect coffee?";
+    try {
+      // First try the edge function
+      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
+        body: { 
+          messages: messages
+        }
+      });
+      
+      if (!error && data && data.response) {
+        console.log("Edge function response received");
+        return data.response;
+      }
+      
+      // If edge function fails, fall back to local analysis
+      console.log("Using local analysis fallback");
+      return this.analyzeConversation(messages);
+      
+    } catch (error) {
+      console.error("Error in AI processing:", error);
+      // Fall back to local analysis
+      console.log("Error occurred, using local analysis fallback");
+      return this.analyzeConversation(messages);
+    }
   }
 }
 
