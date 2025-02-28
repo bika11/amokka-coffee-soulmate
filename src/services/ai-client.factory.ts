@@ -120,8 +120,8 @@ export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIC
           console.log("Calling Supabase Edge Function with messages:", messages.length);
           
           // First get the session token
-          const { data } = await supabase.auth.getSession();
-          const sessionToken = data.session?.access_token || '';
+          const { data: sessionData } = await supabase.auth.getSession();
+          const sessionToken = sessionData.session?.access_token || '';
           
           // Direct fetch call with proper headers instead of supabase.functions.invoke
           const response = await fetch('https://htgacpgppyjonzwkkntl.supabase.co/functions/v1/chat-about-coffee', {
@@ -147,10 +147,10 @@ export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIC
             throw new Error(`Failed to call edge function: ${response.statusText}`);
           }
           
-          const data = await response.json();
+          const responseData = await response.json();
           console.log("Edge function response received");
           
-          return data.response;
+          return responseData.response || "No response from edge function";
         } catch (error) {
           console.error("Error calling edge function:", error);
           throw error;
