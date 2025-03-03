@@ -63,7 +63,7 @@ export class OpenAIClient implements AIClient {
   
   private async getCoffeeContext(): Promise<string> {
     try {
-      // Try to get coffee data from Supabase
+      // Try to get coffee data from Supabase, focusing on description column
       const { data: products, error } = await supabase
         .from('amokka_products')
         .select('name, description, overall_description, roast_level, flavor_notes, url')
@@ -81,12 +81,12 @@ export class OpenAIClient implements AIClient {
       
       console.log(`Found ${products.length} products in Supabase`);
       
-      // Build context from Supabase data
+      // Build context from Supabase data, emphasizing the description
       return `You are a helpful and knowledgeable coffee expert for Amokka Coffee. Use only the following product information to answer questions:
 
 ${products.map(coffee => `
 Coffee: ${coffee.name}
-Description: ${coffee.overall_description || coffee.description || ''}
+Description: ${coffee.description || coffee.overall_description || ''}
 Roast Level: ${coffee.roast_level || 'Not specified'}
 Flavor Notes: ${Array.isArray(coffee.flavor_notes) ? coffee.flavor_notes.join(', ') : 'Not specified'}
 URL: ${coffee.url}
@@ -207,7 +207,7 @@ export class GeminiClient implements AIClient {
   
   private async getCoffeeContext(): Promise<string> {
     try {
-      // Try to get coffee data from Supabase
+      // Try to get coffee data from Supabase, focusing on description column
       const { data: products, error } = await supabase
         .from('amokka_products')
         .select('name, description, overall_description, roast_level, flavor_notes, url')
@@ -225,12 +225,12 @@ export class GeminiClient implements AIClient {
       
       console.log(`Found ${products.length} products in Supabase`);
       
-      // Build context from Supabase data
+      // Build context from Supabase data, emphasizing the description
       return `You are a helpful and knowledgeable coffee expert for Amokka Coffee. Use only the following product information to answer questions:
 
 ${products.map(coffee => `
 Coffee: ${coffee.name}
-Description: ${coffee.overall_description || coffee.description || ''}
+Description: ${coffee.description || coffee.overall_description || ''}
 Roast Level: ${coffee.roast_level || 'Not specified'}
 Flavor Notes: ${Array.isArray(coffee.flavor_notes) ? coffee.flavor_notes.join(', ') : 'Not specified'}
 URL: ${coffee.url}
@@ -279,8 +279,8 @@ export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIC
     const savedApiKey = localStorage.getItem('aiApiKey');
     const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' | null;
     
-    // Use provided params, saved preferences, or default to OpenAI
-    const clientType = type || savedApiType || 'openai';
+    // Use provided params, saved preferences, or default to Gemini
+    const clientType = type || savedApiType || 'gemini';
     const clientApiKey = apiKey || savedApiKey || '';
     
     if (!clientApiKey) {
