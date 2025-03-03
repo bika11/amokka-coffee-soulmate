@@ -1,8 +1,10 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { Settings, X } from "lucide-react";
 import { ChatMessage } from "./chat/ChatMessage";
 import { ChatInput } from "./chat/ChatInput";
 import { ChatHeader } from "./chat/ChatHeader";
@@ -16,8 +18,18 @@ export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [apiType, setApiType] = useState<'openai' | 'gemini'>('openai');
   const { toast } = useToast();
-  const aiClient = createAIClient();
+
+  // Load saved API key and type on component mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('aiApiKey') || "";
+    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'openai';
+    setApiKey(savedApiKey);
+    setApiType(savedApiType);
+  }, []);
 
   const handleToggleChat = () => {
     if (!isOpen) {
@@ -31,61 +43,144 @@ export const ChatBot = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleSendMessage = async () => {
-  supabase.auth.getSession()
-    .then(({ data: { session } }) => {
-      const headers = session?.access_token ? { Authorization: `Bearer ${session?.access_token}` } : 'No session token';
-      console.log("Invoking edge function with headers:", headers);
-    });
-  if (!input.trim()) return;
+  const saveApiSettings = () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter a valid API key",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const userMessage = input.trim();
-  setInput("");
-  setMessages((prev) => [...prev, { content: userMessage, role: "user" }]);
-  setIsLoading(true);
-
-  try {
-    // Use the AI client factory
-    const updatedMessages = [
-      ...messages,
-      { content: userMessage, role: "user" as const }
-    ];
-
-    const response = await aiClient.getCompletion(updatedMessages);
-
-    setMessages((prev) => [
-      ...prev,
-      { content: response, role: "assistant" },
-    ]);
-  } catch (error) {
-    console.error("Error getting response:", error);
+    localStorage.setItem('aiApiKey', apiKey);
+    localStorage.setItem('aiApiType', apiType);
+    
     toast({
-      title: "Error",
-      description: error instanceof Error ? error.message : "I apologize, but I'm having trouble responding right now. Please try again later.",
-      variant: "destructive",
+      title: "Settings Saved",
+      description: `Your ${apiType} API key has been saved`,
     });
-  } finally {
-    setIsLoading(false);
-  }
-};
+    
+    setShowSettings(false);
+  };
+
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+    
+    // Check if API key is configured
+    const savedApiKey = localStorage.getItem('aiApiKey');
+    if (!savedApiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure an API key in the settings",
+        variant: "destructive",
+      });
+      setShowSettings(true);
+      return;
+    }
+
+    const userMessage = input.trim();
+    setInput("");
+    setMessages((prev) => [...prev, { content: userMessage, role: "user" }]);
+    setIsLoading(true);
+
+    try {
+      // Use the saved API key and type
+      const aiClient = createAIClient(
+        localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'openai',
+        savedApiKey
+      );
+
+      const updatedMessages = [
+        ...messages,
+        { content: userMessage, role: "user" as const }
+      ];
+
+      console.log("Sending message to AI client", {
+        messageCount: updatedMessages.length,
+        apiType: localStorage.getItem('aiApiType') || 'openai'
+      });
+
+      const response = await aiClient.getCompletion(updatedMessages);
+
+      setMessages((prev) => [
+        ...prev,
+        { content: response, role: "assistant" },
+      ]);
+    } catch (error) {
+      console.error("Error getting response:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error 
+          ? error.message 
+          : "I apologize, but I'm having trouble responding right now. Please check your API key configuration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="absolute bottom-4 right-4">
       {isOpen ? (
         <Card className="w-80 h-96 flex flex-col shadow-lg animate-fade-in">
-          <ChatHeader onClose={handleToggleChat} />
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message, index) => (
-              <ChatMessage key={index} content={message.content} isUser={message.role === "user"} />
-            ))}
-            {isLoading && <LoadingDots />}
-          </div>
-          <ChatInput
-            input={input}
-            setInput={setInput}
-            handleSendMessage={handleSendMessage}
-            isLoading={isLoading}
-          />
+          <ChatHeader onClose={handleToggleChat}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowSettings(!showSettings)}
+              className="h-8 w-8"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </ChatHeader>
+          
+          {showSettings ? (
+            <div className="flex-1 p-4 space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-medium">AI Settings</h3>
+                <div className="space-y-1">
+                  <label className="text-sm">API Type</label>
+                  <select 
+                    className="w-full p-2 border rounded-md"
+                    value={apiType}
+                    onChange={(e) => setApiType(e.target.value as 'openai' | 'gemini')}
+                  >
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini">Google Gemini</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm">API Key</label>
+                  <Input
+                    type="password"
+                    placeholder={`Enter your ${apiType} API key`}
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
+                </div>
+                <Button onClick={saveApiSettings} className="w-full">
+                  Save Settings
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.map((message, index) => (
+                  <ChatMessage key={index} content={message.content} isUser={message.role === "user"} />
+                ))}
+                {isLoading && <LoadingDots />}
+              </div>
+              <ChatInput
+                input={input}
+                setInput={setInput}
+                handleSendMessage={handleSendMessage}
+                isLoading={isLoading}
+              />
+            </>
+          )}
         </Card>
       ) : (
         <ChatButton onClick={handleToggleChat} isBouncing={false} />
