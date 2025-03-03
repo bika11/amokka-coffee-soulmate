@@ -1,4 +1,3 @@
-
 import { AIClient, Message } from "@/interfaces/ai-client.interface";
 import { supabase } from "@/integrations/supabase/client";
 import { COFFEES } from "@/lib/coffee-data";
@@ -267,6 +266,45 @@ Important facts:
 }
 
 /**
+ * Edge Function Proxy Client that calls Supabase Edge Function
+ */
+class EdgeFunctionProxyClient implements AIClient {
+  private modelType: 'openai' | 'gemini';
+  
+  constructor(modelType: 'openai' | 'gemini' = 'gemini') {
+    this.modelType = modelType;
+  }
+  
+  async getCompletion(messages: Message[]): Promise<string> {
+    try {
+      console.log(`Edge Function Proxy: Sending request to chat-about-coffee function, model type: ${this.modelType}`);
+      
+      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
+        body: {
+          messages,
+          model: this.modelType
+        }
+      });
+      
+      if (error) {
+        console.error("Supabase Edge Function error:", error);
+        throw new Error(`Error calling Supabase Edge Function: ${error.message}`);
+      }
+      
+      if (!data || !data.completion) {
+        console.error("Unexpected response format from Edge Function:", data);
+        throw new Error("Unexpected response format from Edge Function");
+      }
+      
+      return data.completion;
+    } catch (error) {
+      console.error("Error in Edge Function Proxy:", error);
+      throw error;
+    }
+  }
+}
+
+/**
  * Factory function to create the appropriate AI client
  * @param type Optional: Force a specific client type
  * @param apiKey Optional: Provide an API key directly instead of using environment variables
@@ -275,23 +313,25 @@ Important facts:
 export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIClient {
   // When running in browser context, we need to handle API keys differently
   if (typeof window !== 'undefined') {
-    // For direct API calls, we need to check for API keys in localStorage
+    // For direct API calls, we need to check for API keys in localStorage or use default edge function
     const savedApiKey = localStorage.getItem('aiApiKey');
     const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' | null;
     
     // Use provided params, saved preferences, or default to Gemini
     const clientType = type || savedApiType || 'gemini';
-    const clientApiKey = apiKey || savedApiKey || '';
+    const clientApiKey = apiKey || savedApiKey;
     
-    if (!clientApiKey) {
-      console.error("No API key available for direct API calls");
-      throw new Error("No API key provided for AI client. Please configure an API key in the settings.");
+    if (clientApiKey) {
+      // Use the saved or provided API key
+      console.log(`Creating direct ${clientType} client with user-provided API key`);
+      return clientType === 'gemini' ? 
+        new GeminiClient(clientApiKey) : 
+        new OpenAIClient(clientApiKey);
+    } else {
+      // No API key available, use proxy to Edge Function
+      console.log(`No user API key available, will use Supabase Edge Function`);
+      return new EdgeFunctionProxyClient(clientType || 'gemini');
     }
-    
-    console.log(`Creating direct ${clientType} client`);
-    return clientType === 'gemini' ? 
-      new GeminiClient(clientApiKey) : 
-      new OpenAIClient(clientApiKey);
   }
   
   // This code path only executes in Node.js context (not in browser)
