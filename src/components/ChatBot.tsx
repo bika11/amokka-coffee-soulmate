@@ -20,15 +20,22 @@ export const ChatBot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState("");
-  const [apiType, setApiType] = useState<'openai' | 'gemini'>('openai');
+  const [apiType, setApiType] = useState<'openai' | 'gemini'>('gemini'); // Default to Gemini
   const { toast } = useToast();
 
   // Load saved API key and type on component mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('aiApiKey') || "";
-    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'openai';
+    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'gemini';
     setApiKey(savedApiKey);
     setApiType(savedApiType);
+    
+    // Check if API key is set
+    if (!savedApiKey) {
+      console.log("No API key found in localStorage");
+    } else {
+      console.log(`Loaded API key (${savedApiType}) from localStorage`);
+    }
   }, []);
 
   const handleToggleChat = () => {
@@ -86,10 +93,10 @@ export const ChatBot = () => {
 
     try {
       // Use the saved API key and type
-      const aiClient = createAIClient(
-        localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'openai',
-        savedApiKey
-      );
+      const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'gemini';
+      console.log(`Using ${savedApiType} API for chat completion`);
+      
+      const aiClient = createAIClient(savedApiType, savedApiKey);
 
       const updatedMessages = [
         ...messages,
@@ -98,7 +105,7 @@ export const ChatBot = () => {
 
       console.log("Sending message to AI client", {
         messageCount: updatedMessages.length,
-        apiType: localStorage.getItem('aiApiType') || 'openai'
+        apiType: savedApiType
       });
 
       const response = await aiClient.getCompletion(updatedMessages);
@@ -147,8 +154,8 @@ export const ChatBot = () => {
                     value={apiType}
                     onChange={(e) => setApiType(e.target.value as 'openai' | 'gemini')}
                   >
-                    <option value="openai">OpenAI</option>
                     <option value="gemini">Google Gemini</option>
+                    <option value="openai">OpenAI</option>
                   </select>
                 </div>
                 <div className="space-y-1">
