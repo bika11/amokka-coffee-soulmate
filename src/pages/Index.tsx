@@ -1,6 +1,6 @@
 
 import { useState, memo, useCallback } from "react";
-import { useCoffeeRecommendations } from "@/hooks/useCoffeeRecommendations";
+import { useCoffeeRecommendations } from "@/contexts/CoffeeRecommendationContext";
 import { CoffeeRecommendationForm } from "@/components/CoffeeRecommendationForm";
 import { CoffeeRecommendation } from "@/components/CoffeeRecommendation";
 import { Button } from "@/components/ui/button";

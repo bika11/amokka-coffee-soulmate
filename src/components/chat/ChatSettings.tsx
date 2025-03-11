@@ -3,32 +3,25 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { useChat } from "@/contexts/ChatContext";
 
 interface ChatSettingsProps {
   onClose: () => void;
 }
 
 export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
-  const [apiKey, setApiKey] = useState("");
-  const [apiType, setApiType] = useState<'openai' | 'gemini'>('gemini');
-  const [useCustomKey, setUseCustomKey] = useState(false);
+  const { apiSettings, updateApiSettings } = useChat();
+  const [apiKey, setApiKey] = useState(apiSettings.apiKey);
+  const [apiType, setApiType] = useState<'openai' | 'gemini'>(apiSettings.apiType);
+  const [useCustomKey, setUseCustomKey] = useState(apiSettings.useCustomKey);
   const { toast } = useToast();
 
-  // Load saved API key and type on component mount
+  // Update local state when context changes
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('aiApiKey') || "";
-    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || 'gemini';
-    setApiKey(savedApiKey);
-    setApiType(savedApiType);
-    setUseCustomKey(!!savedApiKey);
-    
-    // Check if API key is set
-    if (!savedApiKey) {
-      console.log("No custom API key found, will use Supabase Edge Function");
-    } else {
-      console.log(`Loaded custom API key (${savedApiType}) from localStorage`);
-    }
-  }, []);
+    setApiKey(apiSettings.apiKey);
+    setApiType(apiSettings.apiType);
+    setUseCustomKey(apiSettings.useCustomKey);
+  }, [apiSettings]);
 
   const saveApiSettings = () => {
     if (useCustomKey && !apiKey.trim()) {
@@ -40,22 +33,18 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
       return;
     }
 
-    if (useCustomKey) {
-      localStorage.setItem('aiApiKey', apiKey);
-      localStorage.setItem('aiApiType', apiType);
-      toast({
-        title: "Settings Saved",
-        description: `Your ${apiType} API key has been saved`,
-      });
-    } else {
-      // Clear saved API key to use Edge Function
-      localStorage.removeItem('aiApiKey');
-      localStorage.setItem('aiApiType', apiType);
-      toast({
-        title: "Settings Saved",
-        description: `Using Amokka's ${apiType} API via Supabase`,
-      });
-    }
+    updateApiSettings({
+      apiKey,
+      apiType,
+      useCustomKey
+    });
+    
+    toast({
+      title: "Settings Saved",
+      description: useCustomKey 
+        ? `Your ${apiType} API key has been saved` 
+        : `Using Amokka's ${apiType} API via Supabase`,
+    });
     
     onClose();
   };

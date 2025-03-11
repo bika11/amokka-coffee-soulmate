@@ -8,8 +8,7 @@ import { ChatInput } from "./ChatInput";
 import { ChatHeader } from "./ChatHeader";
 import { ChatSettings } from "./ChatSettings";
 import { LoadingDots } from "./LoadingDots";
-import { Message } from "@/interfaces/ai-client.interface";
-import { useChat } from "@/hooks/useChat";
+import { useChat } from "@/contexts/ChatContext";
 
 interface ChatContainerProps {
   onClose: () => void;
@@ -17,7 +16,7 @@ interface ChatContainerProps {
 
 export const ChatContainer = ({ onClose }: ChatContainerProps) => {
   const [showSettings, setShowSettings] = useState(false);
-  const { messages, input, setInput, isLoading, handleSendMessage } = useChat();
+  const { messages, input, setInput, isLoading, sendMessage } = useChat();
 
   return (
     <Card className="w-80 h-96 flex flex-col shadow-lg animate-fade-in">
@@ -45,7 +44,7 @@ export const ChatContainer = ({ onClose }: ChatContainerProps) => {
           <ChatInput
             input={input}
             setInput={setInput}
-            handleSendMessage={handleSendMessage}
+            handleSendMessage={sendMessage}
             isLoading={isLoading}
           />
         </>
