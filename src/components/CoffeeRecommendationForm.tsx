@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Card } from "@/components/ui/card";
-import { ProgressBar } from "@/components/ProgressBar";
-import { FormSteps } from "./recommendation-form/FormSteps";
-import { motion } from "framer-motion";
+import { FormContent } from "./recommendation-form/FormContent";
+import { StepTransition } from "./recommendation-form/StepTransition";
 import {
   type DrinkStyle,
   type BrewMethod,
@@ -20,7 +19,7 @@ interface CoffeeRecommendationFormProps {
   isLoading: boolean;
 }
 
-export const CoffeeRecommendationForm = ({
+export const CoffeeRecommendationForm = memo(({
   onGetRecommendation,
   isLoading,
 }: CoffeeRecommendationFormProps) => {
@@ -63,35 +62,24 @@ export const CoffeeRecommendationForm = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-lg mx-auto px-4 sm:px-0"
-    >
+    <StepTransition className="w-full max-w-lg mx-auto px-4 sm:px-0">
       <Card className="overflow-hidden bg-white shadow-xl rounded-xl border-2">
-        <div className="p-4 sm:p-6 space-y-8">
-          <header>
-            <h1 className="sr-only">Coffee Recommendation Quiz</h1>
-            <ProgressBar currentStep={step} totalSteps={4} />
-          </header>
-          <div className="min-h-[300px] flex items-center justify-center">
-            <FormSteps
-              step={step}
-              isLoading={isLoading}
-              drinkStyle={drinkStyle}
-              roastLevel={roastLevel}
-              selectedFlavors={selectedFlavors}
-              brewMethod={brewMethod}
-              onDrinkStyleSelect={setDrinkStyle}
-              onRoastLevelChange={setRoastLevel}
-              onFlavorToggle={handleFlavorToggle}
-              onBrewMethodSelect={setBrewMethod}
-              onNextStep={() => setStep(3)}
-            />
-          </div>
-        </div>
+        <FormContent
+          step={step}
+          isLoading={isLoading}
+          drinkStyle={drinkStyle}
+          roastLevel={roastLevel}
+          selectedFlavors={selectedFlavors}
+          brewMethod={brewMethod}
+          onDrinkStyleSelect={setDrinkStyle}
+          onRoastLevelChange={setRoastLevel}
+          onFlavorToggle={handleFlavorToggle}
+          onBrewMethodSelect={setBrewMethod}
+          onNextStep={() => setStep(3)}
+        />
       </Card>
-    </motion.div>
+    </StepTransition>
   );
-};
+});
+
+CoffeeRecommendationForm.displayName = "CoffeeRecommendationForm";

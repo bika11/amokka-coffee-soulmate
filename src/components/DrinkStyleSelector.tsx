@@ -2,13 +2,14 @@
 import { Button } from "@/components/ui/button";
 import { DrinkStyle } from "@/lib/coffee-data";
 import { motion } from "framer-motion";
+import { memo } from "react";
 
 interface DrinkStyleSelectorProps {
   selectedStyle: DrinkStyle | null;
   onStyleSelect: (style: DrinkStyle) => void;
 }
 
-export const DrinkStyleSelector = ({
+export const DrinkStyleSelector = memo(({
   selectedStyle,
   onStyleSelect,
 }: DrinkStyleSelectorProps) => {
@@ -27,29 +28,46 @@ export const DrinkStyleSelector = ({
         role="radiogroup"
         aria-labelledby="drink-style-heading"
       >
-        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Button
-            variant={selectedStyle === "Straight up" ? "default" : "outline"}
-            onClick={() => onStyleSelect("Straight up")}
-            className="w-full h-16 text-lg transition-all duration-200"
-            role="radio"
-            aria-checked={selectedStyle === "Straight up"}
-          >
-            Straight up
-          </Button>
-        </motion.div>
-        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Button
-            variant={selectedStyle === "With milk" ? "default" : "outline"}
-            onClick={() => onStyleSelect("With milk")}
-            className="w-full h-16 text-lg transition-all duration-200"
-            role="radio"
-            aria-checked={selectedStyle === "With milk"}
-          >
-            With milk
-          </Button>
-        </motion.div>
+        <DrinkStyleButton 
+          style="Straight up"
+          isSelected={selectedStyle === "Straight up"}
+          onSelect={onStyleSelect}
+        />
+        <DrinkStyleButton 
+          style="With milk"
+          isSelected={selectedStyle === "With milk"}
+          onSelect={onStyleSelect}
+        />
       </div>
     </div>
   );
-};
+});
+
+interface DrinkStyleButtonProps {
+  style: DrinkStyle;
+  isSelected: boolean;
+  onSelect: (style: DrinkStyle) => void;
+}
+
+const DrinkStyleButton = memo(({
+  style,
+  isSelected,
+  onSelect
+}: DrinkStyleButtonProps) => {
+  return (
+    <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+      <Button
+        variant={isSelected ? "default" : "outline"}
+        onClick={() => onSelect(style)}
+        className="w-full h-16 text-lg transition-all duration-200"
+        role="radio"
+        aria-checked={isSelected}
+      >
+        {style}
+      </Button>
+    </motion.div>
+  );
+});
+
+DrinkStyleSelector.displayName = "DrinkStyleSelector";
+DrinkStyleButton.displayName = "DrinkStyleButton";

@@ -1,15 +1,17 @@
+
 import * as React from "react";
 import { Slider } from "@/components/ui/slider";
+import { memo, useCallback } from "react";
 
 interface RoastLevelSliderProps {
   value: number;
   onChange: (value: number) => void;
 }
 
-export const RoastLevelSlider = ({ value, onChange }: RoastLevelSliderProps) => {
-  const handleValueChange = (values: number[]) => {
+export const RoastLevelSlider = memo(({ value, onChange }: RoastLevelSliderProps) => {
+  const handleValueChange = useCallback((values: number[]) => {
     onChange(values[0]);
-  };
+  }, [onChange]);
 
   const getLevelLabel = (level: number) => {
     switch (level) {
@@ -45,4 +47,6 @@ export const RoastLevelSlider = ({ value, onChange }: RoastLevelSliderProps) => 
       </div>
     </div>
   );
-};
+});
+
+RoastLevelSlider.displayName = "RoastLevelSlider";
