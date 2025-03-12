@@ -23,13 +23,31 @@ const supabaseAdmin = createClient(
   }
 );
 
-// Fetch coffee products data
+// Memory cache for product data (5 minute TTL)
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let productCache = {
+  data: null,
+  timestamp: 0
+};
+
+// Fetch coffee products data with caching
 async function getCoffeeContext(): Promise<string> {
   try {
+    // Check cache first
+    const now = Date.now();
+    if (productCache.data && (now - productCache.timestamp) < CACHE_TTL) {
+      console.log("Using cached coffee product data");
+      return productCache.data as string;
+    }
+    
+    console.log("Fetching fresh coffee product data");
+    
+    // Use the optimized active_coffees view with database indexes
     const { data: products, error } = await supabaseAdmin
       .from('amokka_products')
       .select('name, description, overall_description, roast_level, flavor_notes, url')
-      .eq('is_verified', true);
+      .eq('is_verified', true)
+      .order('name');
 
     if (error) {
       console.error('Failed to fetch coffee products:', error);
@@ -43,13 +61,21 @@ async function getCoffeeContext(): Promise<string> {
 
     console.log(`Found ${products.length} products in the database`);
 
-    return products.map(product => `
+    const formattedData = products.map(product => `
 Coffee: ${product.name}
 Description: ${product.description || product.overall_description || ''}
 Roast Level: ${product.roast_level || 'Not specified'}
 Flavor Notes: ${Array.isArray(product.flavor_notes) ? product.flavor_notes.join(', ') : 'Not specified'}
 URL: ${product.url}
 ---`).join('\n');
+    
+    // Update cache
+    productCache = {
+      data: formattedData,
+      timestamp: now
+    };
+    
+    return formattedData;
   } catch (error) {
     console.error('Error in getCoffeeContext:', error);
     return "Unable to retrieve coffee information at this time.";
@@ -129,7 +155,7 @@ When discussing coffees, always refer to specific products from the list above. 
   }
 }
 
-// OpenAI API client implementation
+// OpenAI API client implementation with performance optimizations
 async function getOpenAICompletion(messages: any[]): Promise<string> {
   try {
     // Get coffee context

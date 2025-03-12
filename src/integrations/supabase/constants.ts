@@ -5,6 +5,7 @@ export const SUPABASE_TABLES = {
   COFFEE_RECOMMENDATIONS: 'coffee_recommendations',
   USER_INTERACTIONS: 'user_interactions',
   AMOKKA_PRODUCTS: 'amokka_products',
+  ACTIVE_COFFEES: 'active_coffees', // Added the new view
 } as const;
 
 export const CACHE_KEYS = {
@@ -12,6 +13,8 @@ export const CACHE_KEYS = {
   COFFEE_CONTEXT: 'coffee-context',
   RECOMMENDATIONS: 'recommendations',
   USER_PREFERENCES: 'user-preferences',
+  POPULAR_COFFEES: 'popular-coffees', // Added for popular coffees
+  COFFEE_SEARCH: 'coffee-search', // Added for search results
 } as const;
 
 export const CACHE_TTL = {

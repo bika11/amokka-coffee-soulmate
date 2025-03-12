@@ -2,7 +2,7 @@
 import { useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { SUPABASE_TABLES } from "@/integrations/supabase/constants";
+import { SUPABASE_TABLES, CACHE_KEYS } from "@/integrations/supabase/constants";
 import { measureQueryPerformance, clearCache } from "@/utils/performance";
 
 export const useCoffeeTracking = () => {
@@ -20,7 +20,8 @@ export const useCoffeeTracking = () => {
       
       console.log(`Click tracked for coffee: ${coffeeName}`);
       
-      // Clear any related cache that might depend on click data
+      // Clear caches that might be affected by new click data
+      clearCache(`${CACHE_KEYS.POPULAR_COFFEES}`);
       clearCache(`recommendations:${coffeeName}`);
       
       endMeasure();
