@@ -16,15 +16,7 @@ interface ChatContainerProps {
 
 export const ChatContainer = ({ onClose }: ChatContainerProps) => {
   const [showSettings, setShowSettings] = useState(false);
-  const { 
-    messages, 
-    input, 
-    setInput, 
-    isLoading, 
-    isTyping,
-    progressPercentage,
-    sendMessage 
-  } = useChat();
+  const { messages, input, setInput, isLoading, sendMessage } = useChat();
 
   return (
     <Card className="w-80 h-96 flex flex-col shadow-lg animate-fade-in">
@@ -45,22 +37,15 @@ export const ChatContainer = ({ onClose }: ChatContainerProps) => {
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
-              <ChatMessage 
-                key={index} 
-                content={message.content} 
-                isUser={message.role === "user"} 
-                isTyping={isTyping && index === messages.length - 1}
-              />
+              <ChatMessage key={index} content={message.content} isUser={message.role === "user"} />
             ))}
-            {isLoading && !isTyping && <LoadingDots />}
+            {isLoading && <LoadingDots />}
           </div>
           <ChatInput
             input={input}
             setInput={setInput}
             handleSendMessage={sendMessage}
             isLoading={isLoading}
-            isTyping={isTyping}
-            progressPercentage={progressPercentage}
           />
         </>
       )}

@@ -1,34 +1,37 @@
 
-import { cn } from "@/lib/utils";
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessageProps {
   content: string;
   isUser: boolean;
-  isTyping?: boolean;
 }
 
-export const ChatMessage = ({ content, isUser, isTyping = false }: ChatMessageProps) => {
+export const ChatMessage = ({ content, isUser }: ChatMessageProps) => {
   return (
-    <div
-      className={cn(
-        "flex",
-        isUser ? "justify-end" : "justify-start"
-      )}
-    >
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={cn(
-          "py-2 px-3 rounded-lg max-w-[85%]",
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted"
-        )}
+        className={`max-w-[80%] p-3 rounded-lg ${
+          isUser ? "bg-primary text-primary-foreground" : "bg-muted"
+        }`}
       >
-        <p className="text-sm whitespace-pre-wrap">
-          {content}
-          {isTyping && (
-            <span className="inline-block w-1 h-4 ml-1 bg-current animate-blink" />
-          )}
-        </p>
+        {isUser ? (
+          content
+        ) : (
+          <ReactMarkdown
+            components={{
+              a: ({ node, ...props }) => (
+                <a
+                  {...props}
+                  className="text-blue-500 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              ),
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        )}
       </div>
     </div>
   );
