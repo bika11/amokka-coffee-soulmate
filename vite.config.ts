@@ -24,4 +24,31 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Optimize chunking for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-components': ['@/components/ui'],
+          'forms': ['react-hook-form', '@hookform/resolvers'],
+          'chat': ['@/components/chat'],
+        },
+      },
+    },
+    // Enable tree-shaking optimizations
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    // Generate source maps for production builds
+    sourcemap: true,
+  },
+  // Optimize asset loading
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
+  },
 }));
