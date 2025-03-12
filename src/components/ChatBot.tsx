@@ -41,7 +41,7 @@ export const ChatBot = () => {
               <ChatContainer onClose={handleCloseChat} />
             </motion.div>
           ) : (
-            <ChatButton onClick={handleToggleChat} />
+            <ChatButton onClick={handleToggleChat} isBouncing={false} />
           )}
         </AnimatePresence>
       </div>

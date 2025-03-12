@@ -31,7 +31,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(false);
   const [apiSettings, setApiSettings] = useState({
     apiKey: "",
-    apiType: 'gemini' as const,
+    apiType: 'gemini' as 'openai' | 'gemini',
     useCustomKey: false
   });
   const { toast } = useToast();
