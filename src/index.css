@@ -1,98 +1,24 @@
 
-@font-face {
-    font-family: 'mabry-light-pro';
-    src: url('/mabry-light-pro.otf') format('opentype');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 98%;
-    --foreground: 222 15% 13%;
-    
-    --card: 0 0% 100%;
-    --card-foreground: 222 15% 13%;
-    
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 15% 13%;
-    
-    --primary: 230 83% 94%;
-    --primary-foreground: 222 15% 13%;
-    
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 222 15% 13%;
-    
-    --muted: 240 5% 96%;
-    --muted-foreground: 215 20.2% 65.1%;
-    
-    --accent: 230 83% 94%;
-    --accent-foreground: 222 15% 13%;
-    
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    
-    --border: 240 5% 84%;
-    --input: 240 5% 84%;
-    --ring: 230 83% 94%;
-    
-    --radius: 0.5rem;
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@layer utilities {
+  .animate-blink {
+    animation: blink 1s ease-in-out infinite;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  html, body {
-    overflow-y: hidden;
-  }
-  body {
-    @apply text-foreground;
-    font-family: 'mabry-light-pro', sans-serif;
-  }
-}
-
-.slide-enter {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.slide-enter-active {
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 300ms, transform 300ms;
-}
-
-.slide-exit {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.slide-exit-active {
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 300ms, transform 300ms;
-}
-
-html {
-  font-size: 16px; /* Base font size for larger screens */
-}
-
-@media (max-width: 768px) { /* For smaller screens like tablets */
-  html {
-    font-size: 14px; /* Slightly smaller base font size */
-  }
-}
-
-@media (max-width: 480px) { /* For even smaller screens like phones */
-  html {
-    font-size: 12px; /* Even smaller base font size */
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
