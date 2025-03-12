@@ -94,12 +94,12 @@ serve(async (req) => {
     
     // Get AI completion based on selected model
     let completionResult;
-    if (model === 'openai' && openaiApiKey) {
-      console.log("Using OpenAI API");
-      completionResult = await getOpenAICompletion(messagesWithContext, temperature, maxTokens);
-    } else if (geminiApiKey) {
+    if (geminiApiKey) {
       console.log("Using Gemini API");
       completionResult = await getGeminiCompletion(messagesWithContext, temperature, maxTokens);
+    } else if (model === 'openai' && openaiApiKey) {
+      console.log("Using OpenAI API");
+      completionResult = await getOpenAICompletion(messagesWithContext, temperature, maxTokens);
     } else {
       throw new Error("No API keys available for selected AI model");
     }
