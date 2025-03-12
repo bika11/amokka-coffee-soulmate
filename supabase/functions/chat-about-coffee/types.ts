@@ -5,10 +5,26 @@ export interface ChatCompletionRequestMessage {
 }
 
 export interface ChatRequest {
-  message: string;
-  history: ChatCompletionRequestMessage[];
+  messages: ChatCompletionRequestMessage[];
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  promptId?: string;
 }
 
 export interface AIResponse {
-  response: string;
+  completion: string;
+  model: string;
+  tokens?: {
+    prompt: number;
+    completion: number;
+    total: number;
+  }
+}
+
+export interface PromptTemplate {
+  id: string;
+  version: string;
+  content: string;
+  description?: string;
 }

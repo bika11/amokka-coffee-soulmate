@@ -1,64 +1,31 @@
 
-import { AIClient, Message } from "@/interfaces/ai-client.interface";
+import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
+import { BaseAIClient } from "./base-client";
 import { supabase } from "@/integrations/supabase/client";
-import { COFFEES } from "@/lib/coffee-data";
-import { cacheData, getCachedData, measureQueryPerformance } from "@/utils/performance";
+import { PromptManager } from "./prompt-manager";
+import { SUPABASE_TABLES } from "@/integrations/supabase/constants";
 
 /**
  * OpenAI Client implementation
  */
-export class OpenAIClient implements AIClient {
+export class OpenAIClient extends BaseAIClient {
   private apiKey: string;
   private coffeeContext: string | null = null;
-  private enableCache: boolean = true;
-  private cacheTTL: number = 5 * 60 * 1000; // 5 minutes
 
   constructor(apiKey: string, options: { enableCache?: boolean, cacheTTL?: number } = {}) {
+    super(options);
     this.apiKey = apiKey;
-    
-    if (options.enableCache !== undefined) {
-      this.enableCache = options.enableCache;
-    }
-    
-    if (options.cacheTTL !== undefined) {
-      this.cacheTTL = options.cacheTTL;
-    }
   }
 
-  async getCompletion(messages: Message[]): Promise<string> {
+  getClientType(): string {
+    return 'openai';
+  }
+
+  protected async getCompletionImpl(params: AICompletionParams): Promise<AICompletionResult> {
     try {
-      console.log("OpenAI Client: Sending request with messages:", messages.length);
+      console.log("OpenAI Client: Processing messages:", params.messages.length);
       
-      // Generate a cache key based on messages
-      const cacheKey = this.getCacheKey(messages);
-      
-      // Check if we have a cached response
-      if (this.enableCache) {
-        const cachedCompletion = getCachedData<string>(cacheKey);
-        if (cachedCompletion) {
-          console.log('Using cached OpenAI completion');
-          return cachedCompletion;
-        }
-      }
-      
-      // Get coffee context from Supabase or fallback to local data
-      if (!this.coffeeContext) {
-        this.coffeeContext = await this.getCoffeeContext();
-      }
-      
-      // Add system message with coffee context if not already present
-      const systemMessageExists = messages.some(msg => msg.role === 'system');
-      const messagesWithContext = systemMessageExists ? messages : [
-        {
-          role: 'system',
-          content: this.coffeeContext
-        },
-        ...messages
-      ];
-      
-      // Measure API call performance
-      const endMeasure = measureQueryPerformance('openai-api-call');
-      
+      // Set up the request to OpenAI
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -66,14 +33,12 @@ export class OpenAIClient implements AIClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: messagesWithContext,
-          temperature: 0.7,
+          model: params.model || 'gpt-3.5-turbo',
+          messages: params.messages,
+          temperature: params.temperature ?? 0.7,
+          max_tokens: params.maxTokens,
         }),
       });
-
-      // End performance measurement
-      endMeasure();
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -83,116 +48,74 @@ export class OpenAIClient implements AIClient {
 
       const data = await response.json();
       console.log("OpenAI response received successfully");
-      const completion = data.choices[0].message.content;
       
-      // Cache the result if caching is enabled
-      if (this.enableCache) {
-        cacheData(cacheKey, completion, this.cacheTTL);
-      }
+      // Extract usage statistics if available
+      const tokens = data.usage ? {
+        prompt: data.usage.prompt_tokens,
+        completion: data.usage.completion_tokens,
+        total: data.usage.total_tokens
+      } : undefined;
       
-      return completion;
+      // Track model prediction in Supabase
+      this.trackModelPrediction(data.choices[0].message.content);
+      
+      return {
+        completion: data.choices[0].message.content,
+        model: data.model,
+        tokens
+      };
     } catch (error) {
       console.error("Error in OpenAI API call:", error);
       throw error;
     }
   }
   
-  private getCacheKey(messages: Message[]): string {
-    // Create a deterministic string representation of the messages
-    const messagesString = JSON.stringify(messages.map(m => ({
-      role: m.role,
-      content: m.content
-    })));
-    
-    // Create a hash for the cache key
-    const hashCode = (str: string): number => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-      }
-      return Math.abs(hash);
-    };
-    
-    return `openai:${hashCode(messagesString)}`;
-  }
-  
-  private async getCoffeeContext(): Promise<string> {
-    // Measure database query performance
-    const endMeasure = measureQueryPerformance('get-coffee-context');
-    
+  private async trackModelPrediction(completion: string): Promise<void> {
     try {
-      // Check if we have a cached context
-      const cachedContext = getCachedData<string>('coffee-context');
-      if (cachedContext) {
-        endMeasure();
-        return cachedContext;
-      }
-      
-      // Try to get coffee data from Supabase, focusing on description column
-      const { data: products, error } = await supabase
-        .from('amokka_products')
-        .select('name, description, overall_description, roast_level, flavor_notes, url')
-        .eq('is_verified', true);
-      
-      endMeasure();
-      
-      if (error) {
-        console.error("Error fetching from Supabase:", error);
-        return this.buildLocalCoffeeContext();
-      }
-      
-      if (!products || products.length === 0) {
-        console.warn("No products found in Supabase, using local data");
-        return this.buildLocalCoffeeContext();
-      }
-      
-      console.log(`Found ${products.length} products in Supabase`);
-      
-      // Build context from Supabase data, emphasizing the description
-      const context = `You are a helpful and knowledgeable coffee expert for Amokka Coffee. Use only the following product information to answer questions:
-
-${products.map(coffee => `
-Coffee: ${coffee.name}
-Description: ${coffee.description || coffee.overall_description || ''}
-Roast Level: ${coffee.roast_level || 'Not specified'}
-Flavor Notes: ${Array.isArray(coffee.flavor_notes) ? coffee.flavor_notes.join(', ') : 'Not specified'}
-URL: ${coffee.url}
----`).join('\n')}
-
-When discussing coffees, always refer to specific products from the list above. If asked about a coffee or feature not in the list, politely explain that you can only discuss the coffees we currently offer. Don't make up information that's not in the product list. Be especially accurate about which coffees are organic - only mention a coffee as organic if it's explicitly stated in the description. If you don't know the answer, simply say so.`;
-      
-      // Cache the context for 1 hour
-      cacheData('coffee-context', context, 60 * 60 * 1000);
-      
-      return context;
+      await supabase.from(SUPABASE_TABLES.MODEL_PREDICTIONS).insert({
+        model_version: 'openai',
+        coffee_name: this.extractCoffeeName(completion),
+        prediction_score: 0.8 // Fixed score for simplicity
+      });
     } catch (error) {
-      console.error("Error in getCoffeeContext:", error);
-      endMeasure();
-      return this.buildLocalCoffeeContext();
+      console.error("Error tracking model prediction:", error);
     }
   }
   
-  private buildLocalCoffeeContext(): string {
-    // Fallback to local coffee data
-    console.log("Using local coffee data as fallback");
-    return `You are a helpful and knowledgeable coffee expert for Amokka Coffee. Use only the following product information to answer questions:
-
-${COFFEES.map(coffee => `
+  /**
+   * Helper to load coffee context for system messages
+   */
+  async getCoffeeContext(): Promise<string> {
+    if (this.coffeeContext) {
+      return this.coffeeContext;
+    }
+    
+    try {
+      // Try to get coffee data from Supabase
+      const { data: products, error } = await supabase
+        .from(SUPABASE_TABLES.ACTIVE_COFFEES)
+        .select('name, description, roast_level, flavor_notes, product_link')
+        .order('interaction_count', { ascending: false })
+        .limit(20);
+      
+      if (error || !products || products.length === 0) {
+        throw new Error("No coffee data available");
+      }
+      
+      // Format coffee data
+      const context = products.map(coffee => `
 Coffee: ${coffee.name}
-Description: ${coffee.description}
-Roast Level: ${coffee.roastLevel}/6 (where 1 is lightest, 6 is darkest)
-Flavor Notes: ${coffee.flavorNotes.join(', ')}
-URL: ${coffee.url}
----`).join('\n')}
-
-When discussing coffees, always refer to specific products from the list above. If asked about a coffee or feature not in the list, politely explain that you can only discuss the coffees we currently offer. Don't make up information that's not in the product list. Be especially accurate about which coffees are organic - only mention the Treehugger Organic Blend as organic since it's our only certified organic coffee. If you don't know the answer, simply say so.
-
-Important facts:
-- Treehugger Organic Blend is our only certified organic coffee
-- Roast levels range from 1 (lightest) to 6 (darkest)
-- The Ethiopia Haji Suleiman is our lightest roast (level 2), with bright fruity and floral notes
-- The Gorgona and Sombra are our darkest roasts (level 6)`;
+Description: ${coffee.description || ''}
+Roast Level: ${coffee.roast_level || 'Not specified'}
+Flavor Notes: ${Array.isArray(coffee.flavor_notes) ? coffee.flavor_notes.join(', ') : 'Not specified'}
+URL: ${coffee.product_link}
+---`).join('\n');
+      
+      this.coffeeContext = context;
+      return context;
+    } catch (error) {
+      console.error("Failed to get coffee context:", error);
+      throw error;
+    }
   }
 }

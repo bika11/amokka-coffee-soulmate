@@ -5,7 +5,7 @@ import { GeminiClient } from "./ai-clients/gemini-client";
 import { EdgeFunctionProxyClient } from "./ai-clients/edge-function-proxy-client";
 
 /**
- * Factory function to create the appropriate AI client
+ * Factory function to create the appropriate AI client with fallback mechanisms
  * @param type Optional: Force a specific client type
  * @param apiKey Optional: Provide an API key directly instead of using environment variables
  * @returns An instance of AIClient
@@ -22,15 +22,37 @@ export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIC
     const clientApiKey = apiKey || savedApiKey;
     
     if (clientApiKey) {
-      // Use the saved or provided API key
+      // Create primary client with user-provided API key
       console.log(`Creating direct ${clientType} client with user-provided API key`);
-      return clientType === 'gemini' ? 
+      
+      // Create the primary client
+      const primaryClient = clientType === 'gemini' ? 
         new GeminiClient(clientApiKey) : 
         new OpenAIClient(clientApiKey);
+      
+      // Create a fallback client using edge function
+      const fallbackClient = new EdgeFunctionProxyClient(clientType);
+      
+      // Set the fallback client for the primary client
+      primaryClient.setFallbackClient(fallbackClient);
+      
+      return primaryClient;
     } else {
-      // No API key available, use proxy to Edge Function
+      // No API key available, use proxy to Edge Function with an internal fallback
       console.log(`No user API key available, will use Supabase Edge Function`);
-      return new EdgeFunctionProxyClient(clientType || 'gemini');
+      
+      // Create primary edge function client
+      const primaryClient = new EdgeFunctionProxyClient(clientType);
+      
+      // Create fallback edge function client with the alternative model
+      const fallbackClient = new EdgeFunctionProxyClient(
+        clientType === 'gemini' ? 'openai' : 'gemini'
+      );
+      
+      // Set the fallback client
+      primaryClient.setFallbackClient(fallbackClient);
+      
+      return primaryClient;
     }
   }
   
@@ -40,12 +62,26 @@ export function createAIClient(type?: 'openai' | 'gemini', apiKey?: string): AIC
     if (!key) {
       throw new Error("GEMINI_API_KEY is not set");
     }
-    return new GeminiClient(key);
+    const primaryClient = new GeminiClient(key);
+    
+    // Try to set up a fallback if possible
+    if (process.env.OPENAI_API_KEY) {
+      primaryClient.setFallbackClient(new OpenAIClient(process.env.OPENAI_API_KEY));
+    }
+    
+    return primaryClient;
   } else {
     const key = apiKey || process.env.OPENAI_API_KEY;
     if (!key) {
       throw new Error("OPENAI_API_KEY is not set");
     }
-    return new OpenAIClient(key);
+    const primaryClient = new OpenAIClient(key);
+    
+    // Try to set up a fallback if possible
+    if (process.env.GEMINI_API_KEY) {
+      primaryClient.setFallbackClient(new GeminiClient(process.env.GEMINI_API_KEY));
+    }
+    
+    return primaryClient;
   }
 }

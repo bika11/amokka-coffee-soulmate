@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Message } from "@/interfaces/ai-client.interface";
 import { useToast } from "@/components/ui/use-toast";
 import { createAIClient } from "@/services/ai-client.factory";
+import { PromptManager } from "@/services/ai-clients/prompt-manager";
 
 interface ChatContextType {
   messages: Message[];
@@ -47,7 +48,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       useCustomKey: !!savedApiKey
     });
     
-    // Initialize chat with welcome message
+    // Initialize chat with welcome message from our prompt manager
+    const welcomePrompt = PromptManager.getPrompt('coffee-expert');
     setMessages([
       {
         content: "Hello! I'm your Amokka Coffee expert. Ask me anything about our delicious coffees!",
@@ -111,11 +113,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         useEdgeFunction: !apiSettings.useCustomKey
       });
 
-      const response = await aiClient.getCompletion(updatedMessages);
+      // Use the new AI client interface
+      const result = await aiClient.getCompletion({
+        messages: updatedMessages,
+        temperature: 0.7,
+        maxTokens: 1024,
+        contextLimit: 2000
+      });
+      
+      // Log token usage if available
+      if (result.tokens) {
+        console.log("Token usage:", result.tokens);
+      }
 
       setMessages((prev) => [
         ...prev,
-        { content: response, role: "assistant" },
+        { content: result.completion, role: "assistant" },
       ]);
     } catch (error) {
       console.error("Error getting response:", error);
