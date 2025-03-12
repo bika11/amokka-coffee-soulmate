@@ -2,7 +2,7 @@
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useRef } from "react";
 import { recordInteraction } from "@/utils/performance";
 
 interface ChatInputProps {
@@ -18,17 +18,18 @@ export const ChatInput = memo(({
   handleSendMessage,
   isLoading,
 }: ChatInputProps) => {
-  // Record send message interaction time
-  const recordSendMessage = recordInteraction('send_message');
+  // Create a ref for the interaction recorder to ensure it's stable across renders
+  const recordSendMessageRef = useRef(recordInteraction('send_message'));
   
   const handleSend = useCallback(() => {
     if (isLoading || !input.trim()) return;
     
-    // Record interaction time
-    const endRecord = recordSendMessage();
+    // Use the recorder function from the ref
+    const endRecord = recordSendMessageRef.current;
     handleSendMessage();
+    // Call the function returned by recordInteraction
     endRecord();
-  }, [handleSendMessage, input, isLoading, recordSendMessage]);
+  }, [handleSendMessage, input, isLoading]);
   
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

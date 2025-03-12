@@ -33,8 +33,11 @@ export const measureRenderTime = (componentName: string) => {
 export const recordInteraction = (interactionName: string) => {
   const startTime = performance.now();
   
+  // Return a function that calculates and logs the duration when called
   return () => {
     const endTime = performance.now();
     console.log(`[Performance] ${interactionName} took ${endTime - startTime}ms`);
+    // Return void explicitly to make the type clearer
+    return;
   };
 };
