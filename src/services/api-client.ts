@@ -1,10 +1,15 @@
 
+/**
+ * A simple in-memory cache for API responses
+ * Supports TTL (time-to-live) for cache entries
+ */
 import { requestCache } from "@/utils/request-cache";
 import { handleError, ApiError } from "@/utils/error-handler";
 
-export interface ApiRequestOptions extends RequestInit {
-  // Cache options
-  cache?: boolean;
+// Extend RequestInit but omit the 'cache' property to avoid type conflicts
+export interface ApiRequestOptions extends Omit<RequestInit, 'cache'> {
+  // Our custom cache options
+  useCache?: boolean; // Renamed from 'cache' to avoid conflicts
   cacheTtl?: number; // Time to live in milliseconds
   deduplicate?: boolean;
   
@@ -50,7 +55,7 @@ export async function apiRequest<T = any>(
 ): Promise<ApiResponse<T>> {
   // Extract options with defaults
   const {
-    cache = false,
+    useCache = false, // Renamed from 'cache' to avoid conflicts
     cacheTtl = 5 * 60 * 1000, // 5 minutes default
     deduplicate = true,
     errorMessage = "Failed to fetch data",
@@ -81,7 +86,7 @@ export async function apiRequest<T = any>(
   const cacheKey = `${fetchOptions.method || 'GET'}:${fullUrl}:${JSON.stringify(fetchOptions.body || {})}`;
   
   // Check cache first if enabled
-  if (cache && fetchOptions.method === 'GET') {
+  if (useCache && fetchOptions.method === 'GET') {
     const cachedResponse = requestCache.get<ApiResponse<T>>(cacheKey);
     if (cachedResponse) {
       return cachedResponse;
@@ -132,7 +137,7 @@ export async function apiRequest<T = any>(
       }
       
       // Cache successful GET responses if enabled
-      if (cache && fetchOptions.method === 'GET' && response.ok) {
+      if (useCache && fetchOptions.method === 'GET' && response.ok) {
         requestCache.set(cacheKey, apiResponse, cacheTtl);
       }
       
@@ -215,9 +220,9 @@ export const apiClient = {
    * @param requests Array of request functions that return a promise
    * @returns Array of responses in the same order as the requests
    */
-  async batch<T>(requests: Array<() => Promise<ApiResponse<any>>>): Promise<ApiResponse<T>[]> {
+  async batch<T>(requests: Array<() => Promise<ApiResponse<any>>>): Promise<Array<ApiResponse<any>>> {
     try {
-      return await Promise.all(requests);
+      return await Promise.all(requests.map(requestFn => requestFn()));
     } catch (error) {
       handleError(error, "Failed to execute batch requests");
       throw error;
