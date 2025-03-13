@@ -40,7 +40,8 @@ export class GeminiClient extends BaseAIClient {
       });
 
       console.log("Gemini prompt prepared, sending request...");
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+      // Updated to use the latest Gemini API endpoint
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${this.apiKey}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +70,7 @@ export class GeminiClient extends BaseAIClient {
       const data = await response.json();
       console.log("Gemini response received successfully");
       
-      // Check if the response has the expected structure
+      // Updated to match the expected response structure for the current API version
       if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
         console.error("Unexpected response structure from Gemini API:", JSON.stringify(data));
         throw new Error("Unexpected response structure from Gemini API");
@@ -89,7 +90,7 @@ export class GeminiClient extends BaseAIClient {
       
       return {
         completion,
-        model: 'gemini-pro',
+        model: 'gemini-1.0-pro',
         tokens
       };
     } catch (error) {
@@ -108,6 +109,25 @@ export class GeminiClient extends BaseAIClient {
     } catch (error) {
       console.error("Error tracking model prediction:", error);
     }
+  }
+  
+  /**
+   * Helper to extract coffee name from completion
+   */
+  protected extractCoffeeName(text: string): string {
+    // Simple extraction - get the first term that looks like a coffee name
+    const sentences = text.split(/[.!?]/);
+    for (const sentence of sentences) {
+      const words = sentence.split(' ');
+      for (let i = 0; i < words.length - 1; i++) {
+        // Look for sequences that might be coffee names (2-3 words with some capitalization)
+        const term = words.slice(i, i + 3).join(' ').trim();
+        if (/[A-Z]/.test(term) && term.length > 4) {
+          return term;
+        }
+      }
+    }
+    return "Unknown Coffee";
   }
   
   /**

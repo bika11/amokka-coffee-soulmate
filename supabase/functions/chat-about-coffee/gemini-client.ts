@@ -27,8 +27,8 @@ export class GeminiClient {
 
     try {
       console.log("Making request to Gemini API");
-      // Updated URL to use the correct Gemini API endpoint
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+      // Updated URL to use the correct Gemini API endpoint for the latest version
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${this.apiKey}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

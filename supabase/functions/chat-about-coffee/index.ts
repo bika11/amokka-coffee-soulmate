@@ -247,7 +247,9 @@ async function getGeminiCompletion(
     });
 
     console.log("Sending request to Gemini API");
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
+    
+    // Use the correct Gemini API endpoint and model name for the latest API version
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${geminiApiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -276,7 +278,7 @@ async function getGeminiCompletion(
     const data = await response.json();
     console.log("Gemini response received successfully");
     
-    // Check if the response has the expected structure
+    // Check if the response has the expected structure for the current API version
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
       console.error("Unexpected response structure from Gemini API:", JSON.stringify(data));
       throw new ChatError("Unexpected response structure from Gemini API", 500, JSON.stringify(data));
@@ -291,7 +293,7 @@ async function getGeminiCompletion(
     
     return {
       completion: data.candidates[0].content.parts[0].text,
-      model: 'gemini-pro',
+      model: 'gemini-1.0-pro',
       tokens
     };
   } catch (error) {

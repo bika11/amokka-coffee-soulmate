@@ -27,10 +27,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     try {
       console.log(`Edge Function Proxy: Sending request to chat-about-coffee function, model type: ${this.modelType}`);
       
-      // Get the current user session - we need this for authentication
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      // Call the edge function with authentication
+      // Call the edge function directly - we've disabled JWT verification
       console.log(`Attempting to call chat-about-coffee edge function...`);
       
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
@@ -39,8 +36,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
           model: this.modelType,
           temperature: params.temperature,
           maxTokens: params.maxTokens
-        },
-        // The JWT token will be automatically added to requests if the user is logged in
+        }
       });
       
       if (error) {
@@ -61,9 +57,9 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
         // Reset retry counter after processing
         this.retryCount = 0;
         
-        // Check for specific error types
-        if (error.status === 401 || error.message?.includes('invalid JWT')) {
-          throw new Error(`Authentication error: You need to be logged in to use this feature. If you're already logged in, your session might have expired. Please refresh the page and try again.`);
+        // Check for specific error types and provide more detailed error messages
+        if (error.status === 401) {
+          throw new Error(`Authentication error: The JWT token used to access the Supabase edge function is invalid. This could be due to an expired session or JWT verification being enabled on the function.`);
         } else if (error.status === 403) {
           throw new Error("Permission denied: You don't have access to this resource.");
         } else if (error.status === 404) {
