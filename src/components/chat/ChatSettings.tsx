@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useChat } from "@/contexts/ChatContext";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 interface ChatSettingsProps {
   onClose: () => void;
@@ -54,29 +57,33 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
       <div className="space-y-3">
         <h3 className="font-medium">AI Settings</h3>
         
-        <div className="space-y-2">
-          <label className="text-sm">AI Model</label>
-          <select 
-            className="w-full p-2 border rounded-md"
-            value={apiType}
-            onChange={(e) => setApiType(e.target.value as 'openai' | 'gemini')}
+        <div className="space-y-2 border rounded-md p-3 bg-muted/20">
+          <label className="text-sm font-medium">AI Model</label>
+          <RadioGroup 
+            value={apiType} 
+            onValueChange={(value) => setApiType(value as 'openai' | 'gemini')}
+            className="flex flex-col space-y-2 pt-2"
           >
-            <option value="gemini">Google Gemini</option>
-            <option value="openai">OpenAI</option>
-          </select>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="gemini" id="gemini" />
+              <Label htmlFor="gemini" className="cursor-pointer">Google Gemini (Recommended)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="openai" id="openai" />
+              <Label htmlFor="openai" className="cursor-pointer">OpenAI</Label>
+            </div>
+          </RadioGroup>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
+        <div className="flex items-center space-x-2 py-2">
+          <Switch
             id="useCustomKey"
             checked={useCustomKey}
-            onChange={(e) => setUseCustomKey(e.target.checked)}
-            className="rounded border-gray-300"
+            onCheckedChange={setUseCustomKey}
           />
-          <label htmlFor="useCustomKey" className="text-sm">
+          <Label htmlFor="useCustomKey" className="cursor-pointer">
             Use my own API key
-          </label>
+          </Label>
         </div>
         
         {useCustomKey && (
@@ -93,7 +100,7 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
         
         {!useCustomKey && (
           <p className="text-xs text-gray-500 italic">
-            Using Amokka's {apiType} API via Supabase
+            Using Amokka's {apiType} API via Supabase Edge Function
           </p>
         )}
         

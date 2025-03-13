@@ -22,11 +22,25 @@ export function useChat() {
 
   // Initialize AI client on component mount or when API settings change
   useEffect(() => {
-    const client = createAIClient(
-      apiSettings.apiType,
-      apiSettings.useCustomKey ? apiSettings.apiKey : undefined
-    );
-    setAiClient(client);
+    try {
+      console.log("Initializing AI client with settings:", {
+        apiType: apiSettings.apiType,
+        useCustomKey: apiSettings.useCustomKey
+      });
+      
+      const client = createAIClient(
+        apiSettings.apiType,
+        apiSettings.useCustomKey ? apiSettings.apiKey : undefined
+      );
+      setAiClient(client);
+    } catch (error) {
+      console.error("Error initializing AI client:", error);
+      toast({
+        title: "AI Client Error",
+        description: "Failed to initialize the AI client. Please check your settings.",
+        variant: "destructive",
+      });
+    }
   }, [apiSettings]);
 
   const updateApiSettings = (settings: {
@@ -86,13 +100,36 @@ export function useChat() {
       ]);
     } catch (error) {
       console.error("Error getting response:", error);
+      
+      let errorMessage = "I apologize, but I'm having trouble responding right now.";
+      
+      // Provide more specific error messages based on the type of error
+      if (error instanceof Error) {
+        if (error.message.includes("Edge Function returned a non-2xx status code")) {
+          errorMessage = `There was an issue with the AI service. This could be due to the edge function not being deployed correctly. Please try using a different model or your own API key.`;
+        } else if (error.message.includes("API key")) {
+          errorMessage = `There seems to be an issue with the API key. Please check your settings and try again.`;
+        } else if (error.message.includes("rate limit")) {
+          errorMessage = `The AI service has reached its rate limit. Please try again later or use a different service.`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: error instanceof Error 
-          ? error.message 
-          : "I apologize, but I'm having trouble responding right now.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // Add a system message to the chat about the error
+      setMessages((prev) => [
+        ...prev,
+        { 
+          content: "Sorry, I encountered an error. Please try using a different model in the settings or try again later.", 
+          role: "assistant" 
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }

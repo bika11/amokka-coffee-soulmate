@@ -13,6 +13,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
   constructor(modelType: 'openai' | 'gemini' = 'gemini', options: { enableCache?: boolean, cacheTTL?: number } = {}) {
     super(options);
     this.modelType = modelType;
+    console.log(`EdgeFunctionProxyClient created with model type: ${modelType}`);
   }
   
   getClientType(): string {
@@ -23,6 +24,26 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     try {
       console.log(`Edge Function Proxy: Sending request to chat-about-coffee function, model type: ${this.modelType}`);
       
+      // Verify the function exists first
+      try {
+        const { data: functions, error: listError } = await supabase.functions.list();
+        
+        if (listError) {
+          console.error("Error listing functions:", listError);
+        } else {
+          const functionExists = functions.some(f => f.name === 'chat-about-coffee');
+          console.log(`Function chat-about-coffee exists: ${functionExists}`);
+          
+          if (!functionExists) {
+            throw new Error("The chat-about-coffee edge function does not exist. Please deploy it in your Supabase project.");
+          }
+        }
+      } catch (listError) {
+        console.warn("Could not verify function existence:", listError);
+        // Continue anyway as the function might still be accessible
+      }
+      
+      // Call the edge function
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
         body: {
           messages: params.messages,
@@ -37,9 +58,11 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
         
         // Check for specific error types
         if (error.status === 401) {
-          throw new Error(`Authentication error: The ${this.modelType} API key is not configured. Please check your API settings.`);
+          throw new Error(`Authentication error: The ${this.modelType} API key is not configured correctly in Supabase Edge Function secrets. Please check your API settings.`);
         } else if (error.status === 403) {
           throw new Error("Permission denied: You don't have access to this resource.");
+        } else if (error.status === 404) {
+          throw new Error(`Edge Function not found: The chat-about-coffee edge function is not deployed. Please deploy it in your Supabase project.`);
         } else if (error.status === 429) {
           throw new Error(`Rate limit exceeded for ${this.modelType} API. Please try again later.`);
         }
@@ -65,11 +88,22 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
       };
       
       // Track model prediction in Supabase if enabled
-      this.trackModelPrediction(result.completion);
+      try {
+        this.trackModelPrediction(result.completion);
+      } catch (trackError) {
+        console.warn("Error tracking model prediction (non-critical):", trackError);
+      }
       
       return result;
     } catch (error) {
       console.error("Error in Edge Function Proxy:", error);
+      
+      // Fall back to alternative model if available
+      if (this.fallbackClient) {
+        console.log(`Attempting to use fallback client after error with ${this.modelType}`);
+        return this.fallbackClient.getCompletion(params);
+      }
+      
       throw error;
     }
   }
