@@ -10,7 +10,7 @@ import { SUPABASE_TABLES } from "@/integrations/supabase/constants";
 export class EdgeFunctionProxyClient extends BaseAIClient {
   private modelType: 'openai' | 'gemini';
   private retryCount: number = 0;
-  private maxRetries: number = 2;
+  private maxRetries: number = 3; // Increased from 2 to 3
   private retryDelay: number = 2000; // 2 seconds
   
   constructor(modelType: 'openai' | 'gemini' = 'gemini', options: { enableCache?: boolean, cacheTTL?: number } = {}) {
@@ -27,7 +27,10 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     try {
       console.log(`Edge Function Proxy: Sending request to chat-about-coffee function, model type: ${this.modelType}`);
       
-      // Call the edge function directly
+      // Get the current user session - we need this for authentication
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      // Call the edge function with authentication
       console.log(`Attempting to call chat-about-coffee edge function...`);
       
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
@@ -36,7 +39,8 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
           model: this.modelType,
           temperature: params.temperature,
           maxTokens: params.maxTokens
-        }
+        },
+        // The JWT token will be automatically added to requests if the user is logged in
       });
       
       if (error) {
@@ -59,7 +63,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
         
         // Check for specific error types
         if (error.status === 401 || error.message?.includes('invalid JWT')) {
-          throw new Error(`Authentication error: The JWT token used to access the Supabase edge function is invalid. This could be due to an expired session or missing API key. Please refresh the page or check your API settings.`);
+          throw new Error(`Authentication error: You need to be logged in to use this feature. If you're already logged in, your session might have expired. Please refresh the page and try again.`);
         } else if (error.status === 403) {
           throw new Error("Permission denied: You don't have access to this resource.");
         } else if (error.status === 404) {
@@ -109,7 +113,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     }
   }
   
-  private async trackModelPrediction(completion: string): Promise<void> {
+  protected async trackModelPrediction(completion: string): Promise<void> {
     try {
       await supabase.from(SUPABASE_TABLES.MODEL_PREDICTIONS).insert({
         model_version: this.modelType,

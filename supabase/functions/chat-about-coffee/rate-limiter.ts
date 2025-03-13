@@ -2,8 +2,8 @@
 export class RateLimiter {
   private requests: Map<string, number[]> = new Map();
   private readonly windowMs = 60000; // 1 minute
-  private readonly maxRequests = 5; // Reduced from 10 to 5 requests per minute
-  private readonly ipExemptList = new Set(['127.0.0.1', 'localhost']); // IPs that bypass rate limiting
+  private readonly maxRequests = 10; // Increased from 5 to 10 requests per minute
+  private readonly ipExemptList = new Set(['127.0.0.1', 'localhost', '::1']); // Added ::1 for IPv6 localhost
 
   async checkRateLimit(clientIp: string): Promise<void> {
     // Skip rate limiting for local development
