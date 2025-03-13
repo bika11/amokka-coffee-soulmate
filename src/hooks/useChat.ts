@@ -67,7 +67,7 @@ export function useChat() {
         useEdgeFunction: !apiSettings.useCustomKey
       });
 
-      // Use the AI client interface properly
+      // Use the AI client interface properly with the correct parameter type
       const result = await aiClient.getCompletion({
         messages: updatedMessages,
         temperature: 0.7,
@@ -79,6 +79,7 @@ export function useChat() {
         console.log("Token usage:", result.tokens);
       }
 
+      // Ensure we're adding a message with a string content, not the AICompletionResult object
       setMessages((prev) => [
         ...prev,
         { content: result.completion, role: "assistant" },
