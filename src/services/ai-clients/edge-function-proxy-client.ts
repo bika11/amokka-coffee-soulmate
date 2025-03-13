@@ -1,3 +1,4 @@
+
 import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
 import { BaseAIClient } from "./base-client";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,7 +105,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     }
   }
   
-  private extractCoffeeName(text: string): string {
+  protected extractCoffeeName(text: string): string {
     // Simple extraction - get the first term that looks like a coffee name
     // This is a simplistic approach and might need refinement
     const sentences = text.split(/[.!?]/);
