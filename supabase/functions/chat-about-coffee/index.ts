@@ -5,6 +5,9 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getCoffeeContext, optimizeContext } from "./context-builder.ts";
 import { formatPromptWithContext, getPrompt } from "./prompt-manager.ts";
 import { ChatCompletionRequestMessage } from "./types.ts";
+import { ChatError } from "./error-handler.ts";
+import { createSupabaseAdmin } from "../_shared/supabase-admin.ts";
+import { Config } from "./config.ts";
 
 // Initialize AI clients based on available API keys
 const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
@@ -14,17 +17,9 @@ if (!geminiApiKey && !openaiApiKey) {
   console.error("No AI API keys found in environment variables");
 }
 
-// Initialize Supabase client with admin privileges
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+// Initialize cache for responses (in-memory)
+const responseCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 serve(async (req) => {
   // Log request details
@@ -70,51 +65,130 @@ serve(async (req) => {
 
     console.log(`Processing request with ${messages.length} messages, using model: ${model}`);
     
-    // Get coffee context for product information
-    const coffeeContext = await getCoffeeContext(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    
-    // Get system prompt from prompt manager
-    const systemPrompt = formatPromptWithContext(promptId, coffeeContext);
-    
-    // Optimize context if needed
-    const optimizedPrompt = optimizeContext(systemPrompt, 2000);
-    
-    // Prepare messages with system prompt
-    const systemMessageExists = messages.some(msg => msg.role === 'system');
-    const messagesWithContext = systemMessageExists ? messages : [
-      {
-        role: 'system',
-        content: optimizedPrompt
-      },
-      ...messages
-    ];
-    
-    // Get AI completion based on selected model
-    let completionResult;
-    if (geminiApiKey) {
-      console.log("Using Gemini API");
-      completionResult = await getGeminiCompletion(messagesWithContext, temperature, maxTokens);
-    } else if (model === 'openai' && openaiApiKey) {
-      console.log("Using OpenAI API");
-      completionResult = await getOpenAICompletion(messagesWithContext, temperature, maxTokens);
-    } else {
-      throw new Error("No API keys available for selected AI model");
-    }
-
-    // Return the completion
-    return new Response(
-      JSON.stringify(completionResult),
-      { 
-        headers: {
-          ...corsHeaders,
-          'Access-Control-Allow-Origin': origin,
-          'Content-Type': 'application/json'
+    // Check if we're using Gemini but don't have an API key
+    if (model === 'gemini' && !geminiApiKey) {
+      console.error("Gemini API key not configured but Gemini model was requested");
+      return new Response(
+        JSON.stringify({ error: "Gemini API key not configured" }),
+        { 
+          status: 401,
+          headers: {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json'
+          }
         }
+      );
+    }
+    
+    // Check if we're using OpenAI but don't have an API key
+    if (model === 'openai' && !openaiApiKey) {
+      console.error("OpenAI API key not configured but OpenAI model was requested");
+      return new Response(
+        JSON.stringify({ error: "OpenAI API key not configured" }),
+        { 
+          status: 401,
+          headers: {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }
+    
+    // Check cache first for exact message combination
+    const cacheKey = getCacheKey(messages, model, promptId);
+    const cachedResponse = responseCache.get(cacheKey);
+    if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_TTL) {
+      console.log("Returning cached response");
+      return new Response(
+        JSON.stringify(cachedResponse.data),
+        { 
+          headers: {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }
+    
+    try {
+      // Get coffee context for product information
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new ChatError("Missing Supabase configuration", 500);
       }
-    );
+      
+      const coffeeContext = await getCoffeeContext(supabaseUrl, supabaseKey);
+      
+      // Get system prompt from prompt manager
+      const systemPrompt = formatPromptWithContext(promptId, coffeeContext);
+      
+      // Optimize context if needed
+      const optimizedPrompt = optimizeContext(systemPrompt, 2000);
+      
+      // Prepare messages with system prompt
+      const systemMessageExists = messages.some(msg => msg.role === 'system');
+      const messagesWithContext = systemMessageExists ? messages : [
+        {
+          role: 'system',
+          content: optimizedPrompt
+        },
+        ...messages
+      ];
+      
+      // Get AI completion based on selected model
+      let completionResult;
+      if (model === 'gemini' && geminiApiKey) {
+        console.log("Using Gemini API");
+        completionResult = await getGeminiCompletion(messagesWithContext, temperature, maxTokens);
+      } else if (model === 'openai' && openaiApiKey) {
+        console.log("Using OpenAI API");
+        completionResult = await getOpenAICompletion(messagesWithContext, temperature, maxTokens);
+      } else {
+        throw new ChatError("No API keys available for selected AI model", 401);
+      }
+
+      // Cache the response
+      responseCache.set(cacheKey, {
+        data: completionResult,
+        timestamp: Date.now()
+      });
+      
+      // Return the completion
+      return new Response(
+        JSON.stringify(completionResult),
+        { 
+          headers: {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error in AI processing:', error);
+      const status = error instanceof ChatError ? error.status : 500;
+      
+      return new Response(
+        JSON.stringify({ 
+          error: error.message || "An unexpected error occurred in AI processing",
+          details: error instanceof ChatError ? error.details : undefined
+        }),
+        { 
+          headers: {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json'
+          },
+          status 
+        }
+      );
+    }
   } catch (error) {
     console.error('Error in chat-about-coffee function:', error);
     
@@ -131,6 +205,25 @@ serve(async (req) => {
     );
   }
 });
+
+// Function to generate a deterministic cache key
+function getCacheKey(messages: ChatCompletionRequestMessage[], model: string, promptId: string): string {
+  // Create a deterministic string representation of the messages
+  const messagesStr = JSON.stringify(messages.map(m => ({
+    role: m.role,
+    content: m.content
+  })));
+  
+  // Generate a hash for the messages
+  let hash = 0;
+  for (let i = 0; i < messagesStr.length; i++) {
+    const char = messagesStr.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  return `${model}:${promptId}:${Math.abs(hash)}`;
+}
 
 // Gemini API client implementation
 async function getGeminiCompletion(
@@ -177,7 +270,7 @@ async function getGeminiCompletion(
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Gemini API error (${response.status}):`, errorText);
-      throw new Error(`Gemini API error: ${response.statusText}`);
+      throw new ChatError(`Gemini API error: ${response.statusText}`, response.status, errorText);
     }
 
     const data = await response.json();
@@ -186,7 +279,7 @@ async function getGeminiCompletion(
     // Check if the response has the expected structure
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
       console.error("Unexpected response structure from Gemini API:", JSON.stringify(data));
-      throw new Error("Unexpected response structure from Gemini API");
+      throw new ChatError("Unexpected response structure from Gemini API", 500, JSON.stringify(data));
     }
     
     // Extract token usage if available
@@ -203,7 +296,10 @@ async function getGeminiCompletion(
     };
   } catch (error) {
     console.error("Error in Gemini API call:", error);
-    throw error;
+    if (error instanceof ChatError) {
+      throw error;
+    }
+    throw new ChatError(error.message || "Error in Gemini API call", 500);
   }
 }
 
@@ -232,7 +328,7 @@ async function getOpenAICompletion(
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`OpenAI API error (${response.status}):`, errorText);
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      throw new ChatError(`OpenAI API error: ${response.statusText}`, response.status, errorText);
     }
 
     const data = await response.json();
@@ -252,6 +348,9 @@ async function getOpenAICompletion(
     };
   } catch (error) {
     console.error("Error in OpenAI API call:", error);
-    throw error;
+    if (error instanceof ChatError) {
+      throw error;
+    }
+    throw new ChatError(error.message || "Error in OpenAI API call", 500);
   }
 }
