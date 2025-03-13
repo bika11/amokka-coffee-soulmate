@@ -1,4 +1,3 @@
-
 import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
 import { BaseAIClient } from "./base-client";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,26 +23,10 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     try {
       console.log(`Edge Function Proxy: Sending request to chat-about-coffee function, model type: ${this.modelType}`);
       
-      // Verify the function exists first
-      try {
-        const { data: functions, error: listError } = await supabase.functions.list();
-        
-        if (listError) {
-          console.error("Error listing functions:", listError);
-        } else {
-          const functionExists = functions.some(f => f.name === 'chat-about-coffee');
-          console.log(`Function chat-about-coffee exists: ${functionExists}`);
-          
-          if (!functionExists) {
-            throw new Error("The chat-about-coffee edge function does not exist. Please deploy it in your Supabase project.");
-          }
-        }
-      } catch (listError) {
-        console.warn("Could not verify function existence:", listError);
-        // Continue anyway as the function might still be accessible
-      }
+      // Call the edge function directly without attempting to verify existence first
+      // as the functions.list() method is not available in the client
+      console.log(`Attempting to call chat-about-coffee edge function...`);
       
-      // Call the edge function
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
         body: {
           messages: params.messages,
@@ -119,5 +102,22 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
       // Just log the error and continue - tracking failure shouldn't stop the application
       console.error("Error tracking model prediction:", error);
     }
+  }
+  
+  private extractCoffeeName(text: string): string {
+    // Simple extraction - get the first term that looks like a coffee name
+    // This is a simplistic approach and might need refinement
+    const sentences = text.split(/[.!?]/);
+    for (const sentence of sentences) {
+      const words = sentence.split(' ');
+      for (let i = 0; i < words.length - 1; i++) {
+        // Look for sequences that might be coffee names (2-3 words with some capitalization)
+        const term = words.slice(i, i + 3).join(' ').trim();
+        if (/[A-Z]/.test(term) && term.length > 4) {
+          return term;
+        }
+      }
+    }
+    return "Unknown Coffee";
   }
 }
