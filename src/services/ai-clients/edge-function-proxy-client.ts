@@ -9,6 +9,9 @@ import { SUPABASE_TABLES } from "@/integrations/supabase/constants";
  */
 export class EdgeFunctionProxyClient extends BaseAIClient {
   private modelType: 'openai' | 'gemini';
+  private retryCount: number = 0;
+  private maxRetries: number = 2;
+  private retryDelay: number = 2000; // 2 seconds
   
   constructor(modelType: 'openai' | 'gemini' = 'gemini', options: { enableCache?: boolean, cacheTTL?: number } = {}) {
     super(options);
@@ -24,8 +27,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
     try {
       console.log(`Edge Function Proxy: Sending request to chat-about-coffee function, model type: ${this.modelType}`);
       
-      // Call the edge function directly without attempting to verify existence first
-      // as the functions.list() method is not available in the client
+      // Call the edge function directly
       console.log(`Attempting to call chat-about-coffee edge function...`);
       
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
@@ -40,15 +42,30 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
       if (error) {
         console.error("Supabase Edge Function error:", error);
         
+        // Handle rate limiting (429 errors)
+        if (error.status === 429 && this.retryCount < this.maxRetries) {
+          this.retryCount++;
+          console.log(`Rate limit exceeded. Retrying in ${this.retryDelay}ms... (Attempt ${this.retryCount} of ${this.maxRetries})`);
+          
+          // Implement exponential backoff
+          await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+          this.retryDelay *= 2; // Double delay for next retry
+          
+          return this.getCompletionImpl(params);
+        }
+        
+        // Reset retry counter after processing
+        this.retryCount = 0;
+        
         // Check for specific error types
-        if (error.status === 401) {
-          throw new Error(`Authentication error: The ${this.modelType} API key is not configured correctly in Supabase Edge Function secrets. Please check your API settings.`);
+        if (error.status === 401 || error.message?.includes('invalid JWT')) {
+          throw new Error(`Authentication error: The JWT token used to access the Supabase edge function is invalid. This could be due to an expired session or missing API key. Please refresh the page or check your API settings.`);
         } else if (error.status === 403) {
           throw new Error("Permission denied: You don't have access to this resource.");
         } else if (error.status === 404) {
-          throw new Error(`Edge Function not found: The chat-about-coffee edge function is not deployed. Please deploy it in your Supabase project.`);
+          throw new Error(`Edge Function not found: The chat-about-coffee edge function is not deployed or correctly configured. Please ensure it's properly deployed in your Supabase project.`);
         } else if (error.status === 429) {
-          throw new Error(`Rate limit exceeded for ${this.modelType} API. Please try again later.`);
+          throw new Error(`Rate limit exceeded for ${this.modelType} API. Please wait a few minutes and try again later.`);
         }
         
         throw new Error(`Error calling Supabase Edge Function: ${error.message}`);
