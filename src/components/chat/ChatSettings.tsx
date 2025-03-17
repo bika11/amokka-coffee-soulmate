@@ -59,7 +59,7 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
       <div className="space-y-3">
         <h3 className="font-medium">AI Settings</h3>
         
-        <Alert variant="warning" className="mb-3">
+        <Alert variant="destructive" className="mb-3">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             The Supabase Edge Function may not be properly configured. If you experience errors, please use your own API key.
@@ -117,7 +117,7 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
         
         {!useCustomKey && (
           <div className="space-y-2">
-            <Alert variant="info" className="bg-blue-50">
+            <Alert variant="default" className="bg-blue-50">
               <Info className="h-4 w-4" />
               <AlertDescription className="text-xs">
                 Using Amokka's {apiType} API via Supabase Edge Function. No authentication required.

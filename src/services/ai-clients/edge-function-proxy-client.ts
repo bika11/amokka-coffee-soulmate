@@ -34,11 +34,12 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
       if (this.modelType === 'openai') {
         try {
           // Use direct fetch for more control over the request
-          const response = await fetch(`${supabase.functions.url}/chat-about-coffee`, {
+          const edgeFunctionUrl = `${supabase.supabaseUrl}/functions/v1/chat-about-coffee`;
+          const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'apikey': supabase.auth.session()?.access_token || ''
+              'apikey': supabase.supabaseKey
             },
             body: JSON.stringify({
               messages: params.messages,
