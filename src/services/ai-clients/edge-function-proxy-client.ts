@@ -107,6 +107,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
         this.retryCount = 0;
         
         // Check if this is an API key error for the requested model
+        // Fix the comparison by using strictly typed conditions
         if ((error.status === 401 || error.status === 500) && this.modelType === 'openai') {
           console.log("OpenAI API key error, falling back to Gemini model");
           
