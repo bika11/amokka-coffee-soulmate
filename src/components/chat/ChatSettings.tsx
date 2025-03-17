@@ -7,6 +7,8 @@ import { useChat } from "@/contexts/ChatContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { AlertCircle, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ChatSettingsProps {
   onClose: () => void;
@@ -57,6 +59,13 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
       <div className="space-y-3">
         <h3 className="font-medium">AI Settings</h3>
         
+        <Alert variant="warning" className="mb-3">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            The Supabase Edge Function may not be properly configured. If you experience errors, please use your own API key.
+          </AlertDescription>
+        </Alert>
+        
         <div className="space-y-2 border rounded-md p-3 bg-muted/20">
           <label className="text-sm font-medium">AI Model</label>
           <RadioGroup 
@@ -100,13 +109,21 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Your API key is stored locally in your browser and never sent to our servers.
+            </p>
           </div>
         )}
         
         {!useCustomKey && (
-          <p className="text-xs text-gray-500 italic">
-            Using Amokka's {apiType} API via Supabase Edge Function
-          </p>
+          <div className="space-y-2">
+            <Alert variant="info" className="bg-blue-50">
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Using Amokka's {apiType} API via Supabase Edge Function. No authentication required.
+              </AlertDescription>
+            </Alert>
+          </div>
         )}
         
         <Button onClick={saveApiSettings} className="w-full mt-2">

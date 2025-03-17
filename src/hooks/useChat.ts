@@ -105,8 +105,8 @@ export function useChat() {
       
       // Provide more specific error messages based on the type of error
       if (error instanceof Error) {
-        if (error.message.includes("Edge Function returned a non-2xx status code")) {
-          errorMessage = `There was an issue with the AI service. Please try using the Gemini model instead of OpenAI, or provide your own API key in the settings.`;
+        if (error.message.includes("Edge Function") || error.message.includes("non-2xx status code")) {
+          errorMessage = `There was an issue with the AI service. Please try using the Gemini model or provide your own API key in the settings.`;
         } else if (error.message.includes("API key")) {
           errorMessage = `There seems to be an issue with the API key. Please check your settings and try again, or try using a different model.`;
         } else if (error.message.includes("rate limit")) {
@@ -126,7 +126,7 @@ export function useChat() {
       setMessages((prev) => [
         ...prev,
         { 
-          content: "Sorry, I encountered an error. Please try using the Gemini model in the settings instead of OpenAI, or try again later.", 
+          content: "Sorry, I encountered an error. Please try again or check the settings to use your own API key.", 
           role: "assistant" 
         },
       ]);
