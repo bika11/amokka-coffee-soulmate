@@ -73,6 +73,11 @@ export const ChatSettings = ({ onClose }: ChatSettingsProps) => {
               <Label htmlFor="openai" className="cursor-pointer">OpenAI</Label>
             </div>
           </RadioGroup>
+          <p className="text-xs text-muted-foreground mt-1">
+            {apiType === 'openai' ? 
+              "Note: OpenAI may not be configured on the server. If you get errors, switch to Gemini or use your own API key." :
+              "Gemini is the recommended model for the coffee chatbot."}
+          </p>
         </div>
         
         <div className="flex items-center space-x-2 py-2">

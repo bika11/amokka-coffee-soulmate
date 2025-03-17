@@ -10,7 +10,7 @@ import { SUPABASE_TABLES } from "@/integrations/supabase/constants";
 export class EdgeFunctionProxyClient extends BaseAIClient {
   private modelType: 'openai' | 'gemini';
   private retryCount: number = 0;
-  private maxRetries: number = 3; // Increased from 2 to 3
+  private maxRetries: number = 3;
   private retryDelay: number = 2000; // 2 seconds
   
   constructor(modelType: 'openai' | 'gemini' = 'gemini', options: { enableCache?: boolean, cacheTTL?: number } = {}) {
@@ -57,9 +57,18 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
         // Reset retry counter after processing
         this.retryCount = 0;
         
+        // Check if this is an API key error for the requested model
+        if (error.status === 401 && this.modelType === 'openai') {
+          console.log("OpenAI API key error, falling back to Gemini model");
+          
+          // Try gemini model instead if we're currently using OpenAI
+          const fallbackClient = new EdgeFunctionProxyClient('gemini');
+          return fallbackClient.getCompletion(params);
+        }
+        
         // Check for specific error types and provide more detailed error messages
         if (error.status === 401) {
-          throw new Error(`Authentication error: The JWT token used to access the Supabase edge function is invalid. This could be due to an expired session or JWT verification being enabled on the function.`);
+          throw new Error(`Authentication error: The service cannot authenticate with the ${this.modelType} API. Please try a different model.`);
         } else if (error.status === 403) {
           throw new Error("Permission denied: You don't have access to this resource.");
         } else if (error.status === 404) {

@@ -68,8 +68,26 @@ serve(async (req) => {
     // Check if we're using Gemini but don't have an API key
     if (model === 'gemini' && !geminiApiKey) {
       console.error("Gemini API key not configured but Gemini model was requested");
+      
+      // Check if we have an OpenAI key as fallback
+      if (openaiApiKey) {
+        console.log("Falling back to OpenAI model since Gemini API key is not configured");
+        // Continue with OpenAI instead
+        const completionResult = await getOpenAICompletion(messages, temperature, maxTokens);
+        return new Response(
+          JSON.stringify(completionResult),
+          { 
+            headers: {
+              ...corsHeaders,
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: "Gemini API key not configured" }),
+        JSON.stringify({ error: "Gemini API key not configured and no fallback available" }),
         { 
           status: 401,
           headers: {
@@ -84,8 +102,26 @@ serve(async (req) => {
     // Check if we're using OpenAI but don't have an API key
     if (model === 'openai' && !openaiApiKey) {
       console.error("OpenAI API key not configured but OpenAI model was requested");
+      
+      // Check if we have a Gemini key as fallback
+      if (geminiApiKey) {
+        console.log("Falling back to Gemini model since OpenAI API key is not configured");
+        // Continue with Gemini instead
+        const completionResult = await getGeminiCompletion(messages, temperature, maxTokens);
+        return new Response(
+          JSON.stringify(completionResult),
+          { 
+            headers: {
+              ...corsHeaders,
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: "OpenAI API key not configured" }),
+        JSON.stringify({ error: "OpenAI API key not configured and no fallback available" }),
         { 
           status: 401,
           headers: {
