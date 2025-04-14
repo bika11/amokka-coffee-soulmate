@@ -1,6 +1,5 @@
-
 import { createSupabaseAdmin } from "../_shared/supabase-admin.ts";
-import { scrapeProductPage } from "../chat-about-coffee/product-scraper.ts";
+import { scrapeProductPage } from "./product-scraper.ts";
 
 const supabaseAdmin = createSupabaseAdmin();
 
