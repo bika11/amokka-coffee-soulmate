@@ -40,6 +40,12 @@ As part of the refactoring, we've consolidated related components:
 ## Fixed Issues
 - ✅ Resolved TypeScript error in edge-function-proxy-client.ts related to incompatible string literal types
 
+## Identified Redundancies to Address
+1. ⏳ AI Client API Calls: Similar implementation in both edge functions and client code
+2. ⏳ Context Building Logic: Duplicated between server and client side
+3. ✅ Score Components: Consolidated MatchScore and RecommendationScore
+4. ⏳ Type Definitions: Multiple similar type definitions across the codebase
+
 ## Next Steps
 1. ⏳ Continue updating existing code to use the shared library (in progress)
 2. ❌ Create environment-specific adapters for browser/server contexts
