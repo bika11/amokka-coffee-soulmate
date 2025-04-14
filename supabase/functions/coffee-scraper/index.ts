@@ -1,7 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { scrapeProductPage } from "../chat-about-coffee/product-scraper.ts";
+import { scrapeProductPage } from "./product-scraper.ts";
 import { isValidAmokkaUrl } from "./url-validator.ts";
 import { saveProductToDatabase, processBulkUrls } from "./product-processor.ts";
 
