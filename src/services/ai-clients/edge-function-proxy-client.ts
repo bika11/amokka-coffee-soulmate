@@ -36,7 +36,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
       console.error(`Error in ${this.modelType} Edge Function:`, error);
       
       // If we get an error and we're using OpenAI, try Gemini instead
-      if (this.modelType === 'openai' && error.message.includes("Falling back to Gemini")) {
+      if (this.modelType === 'openai' && error instanceof Error && error.message.includes("Falling back to Gemini")) {
         console.log("Creating new Gemini edge client for fallback");
         const fallbackClient = new GeminiEdgeClient();
         return fallbackClient.getCompletion(params);

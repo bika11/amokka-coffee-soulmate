@@ -43,7 +43,8 @@ export class OpenAIEdgeClient extends BaseEdgeFunctionClient {
       });
       
       if (!response.ok) {
-        return handleEdgeFunctionError(response, this.getModelType());
+        // This function throws an error rather than returning a result
+        throw await handleEdgeFunctionError(response, this.getModelType());
       }
       
       const data = await response.json();
