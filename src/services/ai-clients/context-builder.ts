@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { COFFEES } from "@/lib/coffee-data";
+import { COFFEES } from "@/shared/coffee/models";
 
 /**
  * Utility class for building coffee context for AI models

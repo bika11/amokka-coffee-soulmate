@@ -1,4 +1,5 @@
-import { AIPrompt } from "@/interfaces/ai-client.interface";
+
+import { AIPrompt } from "@/shared/ai/types";
 
 // Central repository of all system prompts with versioning
 const PROMPTS: Record<string, AIPrompt> = {

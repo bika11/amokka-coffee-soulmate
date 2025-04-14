@@ -1,5 +1,5 @@
 
-import { AIClient } from "@/interfaces/ai-client.interface";
+import { AIClient } from "@/shared/ai/types";
 import { OpenAIClient } from "./ai-clients/openai-client";
 import { GeminiClient } from "./ai-clients/gemini-client";
 import { EdgeFunctionProxyClient } from "./ai-clients/edge-function-proxy-client";

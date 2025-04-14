@@ -1,5 +1,5 @@
 
-import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
+import { AICompletionParams, AICompletionResult } from "@/shared/ai/types";
 import { BaseAIClient } from "./base-client";
 import { OpenAIEdgeClient } from "./edge-function/openai-edge-client";
 import { GeminiEdgeClient } from "./edge-function/gemini-edge-client";

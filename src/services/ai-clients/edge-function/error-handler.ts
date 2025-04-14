@@ -1,7 +1,7 @@
 
 import { OpenAIEdgeClient } from "./openai-edge-client";
 import { GeminiEdgeClient } from "./gemini-edge-client";
-import { AICompletionResult } from "@/interfaces/ai-client.interface";
+import { AICompletionResult } from "@/shared/ai/types";
 
 /**
  * Handles errors from edge function calls and implements fallback strategies

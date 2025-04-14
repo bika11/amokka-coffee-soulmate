@@ -1,6 +1,6 @@
 
 import { memo, useCallback } from "react";
-import { Coffee } from "@/lib/coffee-data";
+import { Coffee } from "@/shared/coffee/models";
 import { ChatBot } from "./ChatBot";
 import { motion } from "framer-motion";
 import { useCoffeeTracking } from "@/hooks/useCoffeeTracking";

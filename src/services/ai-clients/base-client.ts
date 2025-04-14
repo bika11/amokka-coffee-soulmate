@@ -1,5 +1,5 @@
 
-import { AIClient, AICompletionParams, AICompletionResult, Message } from "@/interfaces/ai-client.interface";
+import { AIClient, AICompletionParams, AICompletionResult, Message } from "@/shared/ai/types";
 import { PromptManager } from "./prompt-manager";
 import { getCachedData, cacheData, measureQueryPerformance } from "@/utils/performance";
 

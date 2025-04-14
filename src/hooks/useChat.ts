@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { AIClient, AICompletionResult, Message } from "@/interfaces/ai-client.interface";
+import { AIClient, AICompletionResult, Message } from "@/shared/ai/types";
 import { createAIClient } from "@/services/ai-client.factory";
 import { toast } from "@/components/ui/use-toast";
 
