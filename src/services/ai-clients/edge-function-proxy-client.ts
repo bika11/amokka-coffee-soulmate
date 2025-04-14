@@ -1,3 +1,4 @@
+
 import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
 import { BaseAIClient } from "./base-client";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +107,7 @@ export class EdgeFunctionProxyClient extends BaseAIClient {
         this.retryCount = 0;
         
         // Check if this is an API key error for the requested model
+        // Fix for type error - use string comparison instead of type comparison
         if ((error.status === 401 || error.status === 500) && this.modelType === 'openai') {
           console.log("OpenAI API key error, falling back to Gemini model");
           
