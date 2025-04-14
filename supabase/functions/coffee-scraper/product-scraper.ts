@@ -1,4 +1,5 @@
 
+
 export async function scrapeProductPage(url: string) {
   console.log('Fetching product data from:', url);
   
