@@ -8,6 +8,7 @@ This document outlines the ongoing refactoring efforts for the Amokka Coffee cod
 - ✅ Created shared core library structure
 - ✅ Fixed TypeScript error in edge-function-proxy-client.ts
 - ✅ Consolidated MatchScore.tsx and RecommendationScore.tsx components
+- ✅ Refactored EdgeFunctionProxyClient into smaller, more focused files
 - ⏳ Currently updating imports to use shared library
 - ❌ Create environment-specific adapters (not started)
 - ❌ Implement graceful fallbacks (not started)
@@ -33,12 +34,27 @@ src/shared/
     └── validation.ts             # Common validation functions
 ```
 
+## Edge Function Client Refactoring
+We've broken down the monolithic EdgeFunctionProxyClient into smaller, more focused modules:
+
+```
+src/services/ai-clients/
+├── edge-function-proxy-client.ts        # Main facade that delegates to specific clients
+└── edge-function/
+    ├── base-edge-client.ts              # Base class with common functionality
+    ├── openai-edge-client.ts            # OpenAI-specific implementation
+    ├── gemini-edge-client.ts            # Gemini-specific implementation
+    ├── error-handler.ts                 # Centralized error handling
+    └── utils.ts                         # Shared utility functions
+```
+
 ## Component Consolidation
 As part of the refactoring, we've consolidated related components:
 - ✅ Merged `MatchScore.tsx` and `RecommendationScore.tsx` into a unified component with configurable display options
 
 ## Fixed Issues
 - ✅ Resolved TypeScript error in edge-function-proxy-client.ts related to incompatible string literal types
+- ✅ Improved error handling and fallback mechanisms in AI clients
 
 ## Identified Redundancies to Address
 1. ⏳ AI Client API Calls: Similar implementation in both edge functions and client code
