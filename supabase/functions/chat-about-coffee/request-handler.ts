@@ -35,6 +35,43 @@ export class RequestHandler {
       throw new ChatError("Invalid request format: messages array is required", 400);
     }
 
+    // Validate messages array content
+    for (const message of messages) {
+      if (!message || typeof message !== 'object' || typeof message.role !== 'string' || typeof message.content !== 'string') {
+        console.error("Invalid request format: each message must have a string role and string content");
+        throw new ChatError("Invalid request format: each message must have a string role and string content", 400);
+      }
+    }
+    
+    // Validate model
+    if (typeof model !== 'string' || (model !== 'gemini' && model !== 'openai')) {
+      console.error("Invalid request format: model must be 'gemini' or 'openai'");
+      throw new ChatError("Invalid request format: model must be 'gemini' or 'openai'", 400);
+    }
+
+    // Validate temperature
+    if (typeof temperature !== 'number' || temperature < 0 || temperature > 1) {
+      console.error("Invalid request format: temperature must be a number between 0 and 1");
+      throw new ChatError("Invalid request format: temperature must be a number between 0 and 1", 400);
+    }
+
+    // Validate maxTokens
+    if (maxTokens !== undefined && (typeof maxTokens !== 'number' || maxTokens <= 0)) {
+      console.error("Invalid request format: maxTokens must be a positive number");
+      throw new ChatError("Invalid request format: maxTokens must be a positive number", 400);
+    }
+
+    // Validate promptId
+    if (typeof promptId !== 'string') {
+      console.error("Invalid request format: promptId must be a string");
+      throw new ChatError("Invalid request format: promptId must be a string", 400);
+    }
+
+    // Further validation could include:
+    // - Checking the length of messages to prevent excessively large requests
+    // - Sanitizing the content of messages to prevent potential injection attacks
+    // - Validating the format of promptId against a known list of valid prompt IDs
+
     console.log(`Processing request with ${messages.length} messages, using model: ${model}`);
     
     // Check for requested model availability
