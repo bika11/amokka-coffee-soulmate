@@ -46,7 +46,21 @@ serve(async (req) => {
 
     // Process single URL
     if (requestData.url) {
-      const url = requestData.url;
+      if (typeof requestData.url !== 'string') {
+        return new Response(
+          JSON.stringify({ error: "Invalid input: url must be a string" }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      const url: string = requestData.url;
       
       if (!isValidAmokkaUrl(url)) {
         return new Response(
@@ -96,7 +110,35 @@ serve(async (req) => {
     
     // Process multiple URLs
     if (requestData.urls && Array.isArray(requestData.urls)) {
-      const urls = requestData.urls;
+      if (!Array.isArray(requestData.urls) || !requestData.urls.every(url => typeof url === 'string')) {
+        return new Response(
+          JSON.stringify({ error: "Invalid input: urls must be an array of strings" }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      if (requestData.urls.length > 50) {
+        return new Response(
+          JSON.stringify({ error: "Invalid input: maximum 50 URLs allowed per request" }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      const urls: string[] = requestData.urls;
       const invalidUrls = urls.filter(url => !isValidAmokkaUrl(url));
       
       if (invalidUrls.length > 0) {
@@ -151,7 +193,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in coffee-scraper function:', error);
     
-    return new Response(
+    const errorBody: { error: string, details?: string } = { 
+      error: error.message || "An unexpected error occurred",
+    };
+    const response = new Response(
       JSON.stringify({ error: error.message || "An unexpected error occurred" }),
       { 
         headers: {
