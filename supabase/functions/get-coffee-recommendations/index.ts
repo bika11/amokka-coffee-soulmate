@@ -72,6 +72,53 @@ Deno.serve(async (req) => {
     const { userPreferences } = await req.json();
 
     // Get all coffees
+    // Validate user preferences
+    if (!userPreferences || typeof userPreferences !== 'object') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: 'User preferences are required and must be an object.' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
+
+    if (typeof userPreferences.drinkStyle !== 'string' || userPreferences.drinkStyle.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: 'drinkStyle must be a string with a maximum length of 50 characters.' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
+
+    if (typeof userPreferences.brewMethod !== 'string' || userPreferences.brewMethod.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: 'brewMethod must be a string with a maximum length of 50 characters.' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
+
+    if (typeof userPreferences.roastLevel !== 'number' || userPreferences.roastLevel < 1 || userPreferences.roastLevel > 4) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: 'roastLevel must be a number between 1 and 4.' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
+
+    if (!Array.isArray(userPreferences.selectedFlavors) || userPreferences.selectedFlavors.length > 10 || !userPreferences.selectedFlavors.every(flavor => typeof flavor === 'string' && flavor.length <= 30)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: 'selectedFlavors must be an array of strings, with a maximum of 10 elements and each string having a maximum length of 30 characters.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
     const { data: coffees, error: dbError } = await supabaseAdmin
       .from('coffees')
       .select('*');

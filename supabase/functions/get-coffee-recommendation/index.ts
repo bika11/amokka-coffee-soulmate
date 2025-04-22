@@ -86,6 +86,20 @@ serve(async (req) => {
       );
     }
 
+    if (preferences.length > 200) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid input",
+          details: "Preferences cannot exceed 200 characters."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+
     console.log('Received preferences:', preferences);
 
     // Create Supabase client
