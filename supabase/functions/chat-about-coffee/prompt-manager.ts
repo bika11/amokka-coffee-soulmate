@@ -45,5 +45,7 @@ export function formatPromptWithContext(promptId: string, context: string): stri
     return `You are a coffee expert for Amokka Coffee. Use the following product information to answer questions:\n\n${context}`;
   }
   
-  return prompt.content.replace('{CONTEXT}', context);
+  const formattedPrompt = prompt.content.replace('{CONTEXT}', context);
+  console.log(`Formatting prompt with ID: ${promptId}, resulting prompt length: ${formattedPrompt.length}`);
+  return formattedPrompt;
 }

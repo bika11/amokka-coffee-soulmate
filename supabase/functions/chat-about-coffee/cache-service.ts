@@ -20,6 +20,7 @@ export class CacheService {
     const cachedItem = this.cache.get(key);
     
     if (!cachedItem) {
+      console.log(`Cache miss for key: ${key}`);
       return null;
     }
     
@@ -29,6 +30,7 @@ export class CacheService {
       return null;
     }
     
+    console.log(`Cache hit for key: ${key}`);
     return cachedItem.data;
   }
 
@@ -40,6 +42,7 @@ export class CacheService {
       data,
       timestamp: Date.now()
     });
+    console.log(`Cached response for key: ${key}`);
     
     // Cleanup old cache entries occasionally to prevent memory leaks
     if (Math.random() < 0.05) { // 5% chance on each cache set
@@ -72,11 +75,14 @@ export class CacheService {
    * Clean up expired cache entries
    */
   private cleanup(): void {
+    let removedCount = 0;
     const now = Date.now();
     for (const [key, item] of this.cache.entries()) {
       if (now - item.timestamp >= this.cacheTTL) {
         this.cache.delete(key);
+        removedCount++;
       }
     }
+    console.log(`Removed ${removedCount} expired entries from cache`);
   }
 }

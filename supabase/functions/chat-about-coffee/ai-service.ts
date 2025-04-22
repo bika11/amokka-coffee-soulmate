@@ -28,10 +28,10 @@ export class AIService {
     maxTokens?: number
   ): Promise<AIResponse> {
     if (model === 'gemini' && this.geminiApiKey) {
-      console.log("Using Gemini API");
+      console.log("Using Gemini API for completion");
       return this.getGeminiCompletion(messages, temperature, maxTokens);
     } else if (model === 'openai' && this.openaiApiKey) {
-      console.log("Using OpenAI API");
+      console.log("Using OpenAI API for completion");
       return this.getOpenAICompletion(messages, temperature, maxTokens);
     }
     
@@ -71,7 +71,7 @@ export class AIService {
     maxTokens?: number
   ): Promise<AIResponse> {
     try {
-      console.log("Sending request to OpenAI API");
+      console.log("Sending request to OpenAI API (gpt-3.5-turbo)");
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -139,7 +139,7 @@ export class AIService {
         }
       });
 
-      console.log("Sending request to Gemini API");
+      console.log("Sending request to Gemini API (gemini-1.5-pro)");
       
       // Use the correct Gemini API endpoint and model name for the latest API version
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${this.geminiApiKey}`, {

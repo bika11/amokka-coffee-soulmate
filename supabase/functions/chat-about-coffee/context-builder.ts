@@ -25,6 +25,7 @@ let productCache = {
  */
 export async function getCoffeeContext(supabaseUrl: string, supabaseKey: string): Promise<string> {
   try {
+    console.log("getCoffeeContext started");
     // Check cache first
     const now = Date.now();
     if (productCache.data && (now - productCache.timestamp) < CACHE_TTL) {
@@ -41,6 +42,7 @@ export async function getCoffeeContext(supabaseUrl: string, supabaseKey: string)
         persistSession: false
       }
     });
+    console.log("Querying amokka_products table for coffee context");
     
     // Use the optimized active_coffees view with database indexes if available,
     // or fall back to the amokka_products table
@@ -77,6 +79,7 @@ URL: ${product.url}
       data: formattedData,
       timestamp: now
     };
+    console.log(`Formatted coffee context data (length: ${formattedData.length})`);
     
     return formattedData;
   } catch (error) {
