@@ -109,12 +109,17 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.message, error.stack);
+    const status = error.message === 'Invalid user token' ? 401 : 500;
+    const errorResponse = {
+      error: error.message,
+      details: error.stack,
+    };
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify(errorResponse),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status,
       }
     );
   }

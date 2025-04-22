@@ -160,11 +160,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error:', error);
+    const status = error.message === 'No matching coffees found' ? 400 : 500;
+    const errorResponse = { error: error.message, details: error.stack };
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify(errorResponse),
       { 
-        status: 400,
+        status: status,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
