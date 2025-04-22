@@ -54,7 +54,7 @@ export async function getCoffeeContext(supabaseUrl: string, supabaseKey: string)
 
     if (error) {
       console.error('Failed to fetch coffee products:', error);
-      throw new Error('Failed to fetch coffee products');
+      throw new ChatError('Failed to fetch coffee products', 500);
     }
     
     if (!products?.length) {
