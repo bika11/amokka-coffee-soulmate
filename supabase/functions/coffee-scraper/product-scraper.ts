@@ -37,7 +37,7 @@ export async function scrapeProductPage(url: string) {
     };
   } catch (error) {
     console.error('Error scraping product:', error);
-    return null;
+    throw new Error(`Error scraping product page: ${error.message}`);
   }
 }
 

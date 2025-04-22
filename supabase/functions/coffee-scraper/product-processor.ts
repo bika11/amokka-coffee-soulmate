@@ -23,6 +23,7 @@ export async function saveProductToDatabase(productData: any) {
     }
   } catch (error) {
     console.error('Exception saving product to database:', error);
+    throw new Error(`Error saving product to database: ${error.message}`);
   }
 }
 
