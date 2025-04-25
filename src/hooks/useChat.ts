@@ -13,6 +13,22 @@ export function useChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [apiSettings, setApiSettings] = useState({
+    apiKey: "",
+    apiType: "gemini" as 'openai' | 'gemini',
+    useCustomKey: false
+  });
+
+  const updateApiSettings = (settings: {
+    apiKey?: string;
+    apiType?: 'openai' | 'gemini';
+    useCustomKey?: boolean;
+  }) => {
+    setApiSettings(prev => ({
+      ...prev,
+      ...settings
+    }));
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -69,6 +85,8 @@ export function useChat() {
     setInput,
     isLoading,
     sendMessage,
-    resetChat
+    resetChat,
+    apiSettings,
+    updateApiSettings
   };
 }
