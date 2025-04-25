@@ -28,7 +28,25 @@ export function useChat() {
       ...prev,
       ...settings
     }));
+    
+    // Save settings to localStorage for persistence
+    if (settings.apiKey !== undefined) localStorage.setItem('aiApiKey', settings.apiKey);
+    if (settings.apiType !== undefined) localStorage.setItem('aiApiType', settings.apiType);
+    if (settings.useCustomKey !== undefined) localStorage.setItem('useCustomKey', settings.useCustomKey.toString());
   };
+  
+  // Load saved settings on component mount
+  useState(() => {
+    const savedApiKey = localStorage.getItem('aiApiKey') || "";
+    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || "gemini";
+    const savedUseCustomKey = localStorage.getItem('useCustomKey') === "true";
+    
+    setApiSettings({
+      apiKey: savedApiKey,
+      apiType: savedApiType,
+      useCustomKey: savedUseCustomKey
+    });
+  });
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -39,11 +57,19 @@ export function useChat() {
     setIsLoading(true);
 
     try {
+      // Prepare request body with messages and API settings
+      const requestBody: any = { 
+        messages: [...messages, { content: userMessage, role: "user" }],
+        apiType: apiSettings.apiType
+      };
+      
+      // Add custom API key if enabled
+      if (apiSettings.useCustomKey && apiSettings.apiKey) {
+        requestBody.customApiKey = apiSettings.apiKey;
+      }
+
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
-        body: { 
-          messages: [...messages, { content: userMessage, role: "user" }],
-          apiType: apiSettings.apiType // Pass selected API type to edge function
-        }
+        body: requestBody
       });
 
       if (error) throw error;
@@ -57,14 +83,14 @@ export function useChat() {
       
       toast({
         title: "Error",
-        description: "I'm having trouble responding right now. Please try again.",
+        description: "I'm having trouble responding right now. Please try again or check your API settings.",
         variant: "destructive",
       });
       
       setMessages((prev) => [
         ...prev,
         { 
-          content: "Sorry, I encountered an error. Please try again.", 
+          content: "Sorry, I encountered an error. Please try again or check your API settings.", 
           role: "assistant" 
         },
       ]);

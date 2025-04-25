@@ -18,7 +18,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, apiType = 'gemini' } = await req.json();
+    const requestBody = await req.json();
+    const { messages, apiType = 'gemini', customApiKey } = requestBody;
     
     if (!Array.isArray(messages)) {
       throw new Error("Invalid request: messages must be an array");
@@ -45,7 +46,10 @@ serve(async (req) => {
     ];
     
     // Create chat service based on requested API type
-    const chatService = new ChatService(apiType as 'gemini' | 'openai');
+    const chatService = new ChatService(
+      apiType as 'gemini' | 'openai', 
+      customApiKey // Pass the custom API key if provided
+    );
     
     // Get completion from selected model
     const completion = await chatService.getCompletion(messagesWithContext);

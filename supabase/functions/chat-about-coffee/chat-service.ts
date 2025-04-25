@@ -13,23 +13,30 @@ export class ChatService {
   private apiKey: string;
   private modelType: 'gemini' | 'openai';
 
-  constructor(modelType: 'gemini' | 'openai' = 'gemini') {
+  constructor(modelType: 'gemini' | 'openai' = 'gemini', customApiKey?: string) {
     this.modelType = modelType;
     
-    // Get API key based on model type
-    if (this.modelType === 'gemini') {
-      const apiKey = Deno.env.get("GEMINI_API_KEY");
-      if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is not set");
-      }
-      this.apiKey = apiKey;
+    // Use custom API key if provided, otherwise use environment variable
+    if (customApiKey) {
+      this.apiKey = customApiKey;
     } else {
-      const apiKey = Deno.env.get("OPENAI_API_KEY");
-      if (!apiKey) {
-        throw new Error("OPENAI_API_KEY is not set");
+      // Get API key based on model type
+      if (this.modelType === 'gemini') {
+        const apiKey = Deno.env.get("GEMINI_API_KEY");
+        if (!apiKey) {
+          throw new Error("GEMINI_API_KEY is not set");
+        }
+        this.apiKey = apiKey;
+      } else {
+        const apiKey = Deno.env.get("OPENAI_API_KEY");
+        if (!apiKey) {
+          throw new Error("OPENAI_API_KEY is not set");
+        }
+        this.apiKey = apiKey;
       }
-      this.apiKey = apiKey;
     }
+    
+    console.log(`ChatService initialized with model type: ${modelType}, using ${customApiKey ? 'custom' : 'environment'} API key`);
   }
 
   private getModelConfig(): ModelConfig {
