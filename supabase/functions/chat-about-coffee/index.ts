@@ -1,41 +1,56 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { ChatError } from "./error-handler.ts";
-import { RequestHandler } from "./request-handler.ts";
+import { ChatService } from "./chat-service.ts";
+import { ChatCompletionRequestMessage } from "./types.ts";
+import { formatPromptWithContext } from "./prompt-manager.ts";
+import { getCoffeeContext } from "./context-builder.ts";
 
-// Initialize request handler with AI service and cache
-const requestHandler = new RequestHandler();
-
-// Initialize cache for responses (in-memory)
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const chatService = new ChatService();
 
 serve(async (req) => {
-  // Log request details
-  console.log(`${req.method} request to ${req.url}`);
   const origin = req.headers.get('origin') || '*';
-
-  // Handle CORS preflight requests
+  
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Origin': origin,
-      }
+      headers: { ...corsHeaders, 'Access-Control-Allow-Origin': origin }
     });
   }
 
   try {
-    // Parse request body
-    const requestData = await req.json();
+    const { messages } = await req.json();
     
-    // Process the request
-    const completionResult = await requestHandler.handleRequest(requestData);
+    if (!Array.isArray(messages)) {
+      throw new Error("Invalid request: messages must be an array");
+    }
+
+    // Get coffee context
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    // Return the completion
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+    
+    // Get coffee context for product information
+    const coffeeContext = await getCoffeeContext(supabaseUrl, supabaseKey);
+    
+    // Format the system prompt with context
+    const systemPrompt = formatPromptWithContext('coffee-expert', coffeeContext);
+    
+    // Prepare messages with system prompt
+    const messagesWithContext: ChatCompletionRequestMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...messages
+    ];
+    
+    // Get completion from Gemini
+    const completion = await chatService.getCompletion(messagesWithContext);
+    
     return new Response(
-      JSON.stringify(completionResult),
+      JSON.stringify({ completion, model: 'gemini-1.5-pro' }),
       { 
         headers: {
           ...corsHeaders,
@@ -45,22 +60,19 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in chat-about-coffee function:', error);
-    
-    const status = error instanceof ChatError ? error.status : 500;
+    console.error('Error in chat function:', error);
     
     return new Response(
       JSON.stringify({ 
         error: error.message || "An unexpected error occurred",
-        details: error instanceof ChatError ? error.details : undefined
       }),
       { 
+        status: 500,
         headers: {
           ...corsHeaders,
           'Access-Control-Allow-Origin': origin,
           'Content-Type': 'application/json'
-        },
-        status 
+        }
       }
     );
   }

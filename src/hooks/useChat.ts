@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from "react";
-import { AIClient, AICompletionResult, Message } from "@/shared/ai/types";
-import { createAIClient } from "@/services/ai-client.factory";
+import { useState } from "react";
+import { Message } from "@/shared/ai/types";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 export function useChat() {
@@ -13,56 +13,9 @@ export function useChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [aiClient, setAiClient] = useState<AIClient | null>(null);
-  const [apiSettings, setApiSettings] = useState({
-    apiKey: localStorage.getItem('aiApiKey') || "",
-    apiType: (localStorage.getItem('aiApiType') as 'openai' | 'gemini') || 'gemini',
-    useCustomKey: !!localStorage.getItem('aiApiKey')
-  });
-
-  // Initialize AI client on component mount or when API settings change
-  useEffect(() => {
-    try {
-      console.log("Initializing AI client with settings:", {
-        apiType: apiSettings.apiType,
-        useCustomKey: apiSettings.useCustomKey
-      });
-      
-      const client = createAIClient(
-        apiSettings.apiType,
-        apiSettings.useCustomKey ? apiSettings.apiKey : undefined
-      );
-      setAiClient(client);
-    } catch (error) {
-      console.error("Error initializing AI client:", error);
-      toast({
-        title: "AI Client Error",
-        description: "Failed to initialize the AI client. Please check your settings.",
-        variant: "destructive",
-      });
-    }
-  }, [apiSettings]);
-
-  const updateApiSettings = (settings: {
-    apiKey?: string;
-    apiType?: 'openai' | 'gemini';
-    useCustomKey?: boolean;
-  }) => {
-    const newSettings = { ...apiSettings, ...settings };
-    
-    if (newSettings.useCustomKey && newSettings.apiKey) {
-      localStorage.setItem('aiApiKey', newSettings.apiKey);
-      localStorage.setItem('aiApiType', newSettings.apiType);
-    } else {
-      localStorage.removeItem('aiApiKey');
-      localStorage.setItem('aiApiType', newSettings.apiType);
-    }
-    
-    setApiSettings(newSettings);
-  };
 
   const sendMessage = async () => {
-    if (!input.trim() || !aiClient) return;
+    if (!input.trim()) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -70,63 +23,29 @@ export function useChat() {
     setIsLoading(true);
 
     try {
-      const updatedMessages = [
-        ...messages,
-        { content: userMessage, role: "user" as const }
-      ];
-
-      console.log("Sending message to AI client", {
-        messageCount: updatedMessages.length,
-        apiType: apiSettings.apiType,
-        useEdgeFunction: !apiSettings.useCustomKey
+      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
+        body: { messages: [...messages, { content: userMessage, role: "user" }] }
       });
 
-      // Use the AI client interface properly with the correct parameter type
-      const result = await aiClient.getCompletion({
-        messages: updatedMessages,
-        temperature: 0.7,
-        maxTokens: 1024,
-        contextLimit: 2000
-      });
-      
-      if (result.tokens) {
-        console.log("Token usage:", result.tokens);
-      }
+      if (error) throw error;
 
-      // Ensure we're adding a message with a string content, not the AICompletionResult object
       setMessages((prev) => [
         ...prev,
-        { content: result.completion, role: "assistant" },
+        { content: data.completion, role: "assistant" },
       ]);
     } catch (error) {
       console.error("Error getting response:", error);
       
-      let errorMessage = "I apologize, but I'm having trouble responding right now.";
-      
-      // Provide more specific error messages based on the type of error
-      if (error instanceof Error) {
-        if (error.message.includes("Edge Function") || error.message.includes("non-2xx status code")) {
-          errorMessage = `There was an issue with the AI service. Please try using the Gemini model or provide your own API key in the settings.`;
-        } else if (error.message.includes("API key")) {
-          errorMessage = `There seems to be an issue with the API key. Please check your settings and try again, or try using a different model.`;
-        } else if (error.message.includes("rate limit")) {
-          errorMessage = `The AI service has reached its rate limit. Please try again later or use a different service.`;
-        } else {
-          errorMessage = `Error: ${error.message}`;
-        }
-      }
-      
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "I'm having trouble responding right now. Please try again.",
         variant: "destructive",
       });
       
-      // Add a system message to the chat about the error
       setMessages((prev) => [
         ...prev,
         { 
-          content: "Sorry, I encountered an error. Please try again or check the settings to use your own API key.", 
+          content: "Sorry, I encountered an error. Please try again.", 
           role: "assistant" 
         },
       ]);
@@ -150,8 +69,6 @@ export function useChat() {
     setInput,
     isLoading,
     sendMessage,
-    resetChat,
-    apiSettings,
-    updateApiSettings
+    resetChat
   };
 }
