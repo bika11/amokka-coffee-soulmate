@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from "react";
-import { Message } from "@/interfaces/ai-client.interface";
+import { Message } from "@/shared/ai/types";
 import { useChat as useBasicChat } from "@/hooks/useChat";
 
 interface ChatContextType {

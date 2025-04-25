@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Message } from "@/shared/ai/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -19,6 +19,19 @@ export function useChat() {
     useCustomKey: false
   });
 
+  // Load saved settings on component mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('aiApiKey') || "";
+    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || "gemini";
+    const savedUseCustomKey = localStorage.getItem('useCustomKey') === "true";
+    
+    setApiSettings({
+      apiKey: savedApiKey,
+      apiType: savedApiType,
+      useCustomKey: savedUseCustomKey
+    });
+  }, []);
+
   const updateApiSettings = (settings: {
     apiKey?: string;
     apiType?: 'openai' | 'gemini';
@@ -34,19 +47,6 @@ export function useChat() {
     if (settings.apiType !== undefined) localStorage.setItem('aiApiType', settings.apiType);
     if (settings.useCustomKey !== undefined) localStorage.setItem('useCustomKey', settings.useCustomKey.toString());
   };
-  
-  // Load saved settings on component mount
-  useState(() => {
-    const savedApiKey = localStorage.getItem('aiApiKey') || "";
-    const savedApiType = localStorage.getItem('aiApiType') as 'openai' | 'gemini' || "gemini";
-    const savedUseCustomKey = localStorage.getItem('useCustomKey') === "true";
-    
-    setApiSettings({
-      apiKey: savedApiKey,
-      apiType: savedApiType,
-      useCustomKey: savedUseCustomKey
-    });
-  });
 
   const sendMessage = async () => {
     if (!input.trim()) return;
