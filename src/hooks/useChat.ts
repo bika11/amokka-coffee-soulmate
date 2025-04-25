@@ -40,7 +40,10 @@ export function useChat() {
 
     try {
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
-        body: { messages: [...messages, { content: userMessage, role: "user" }] }
+        body: { 
+          messages: [...messages, { content: userMessage, role: "user" }],
+          apiType: apiSettings.apiType // Pass selected API type to edge function
+        }
       });
 
       if (error) throw error;

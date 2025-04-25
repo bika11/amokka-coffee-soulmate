@@ -6,8 +6,6 @@ import { ChatCompletionRequestMessage } from "./types.ts";
 import { formatPromptWithContext } from "./prompt-manager.ts";
 import { getCoffeeContext } from "./context-builder.ts";
 
-const chatService = new ChatService();
-
 serve(async (req) => {
   const origin = req.headers.get('origin') || '*';
   
@@ -20,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, apiType = 'gemini' } = await req.json();
     
     if (!Array.isArray(messages)) {
       throw new Error("Invalid request: messages must be an array");
@@ -46,11 +44,17 @@ serve(async (req) => {
       ...messages
     ];
     
-    // Get completion from Gemini
+    // Create chat service based on requested API type
+    const chatService = new ChatService(apiType as 'gemini' | 'openai');
+    
+    // Get completion from selected model
     const completion = await chatService.getCompletion(messagesWithContext);
     
     return new Response(
-      JSON.stringify({ completion, model: 'gemini-1.5-pro' }),
+      JSON.stringify({ 
+        completion, 
+        model: apiType === 'gemini' ? 'gemini-1.5-pro' : 'gpt-3.5-turbo'
+      }),
       { 
         headers: {
           ...corsHeaders,
