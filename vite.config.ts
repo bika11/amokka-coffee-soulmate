@@ -34,14 +34,8 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
-    // Enable tree-shaking optimizations
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    // Use default minifier instead of terser to avoid dependency issues
+    minify: true,
     // Generate source maps for production builds
     sourcemap: true,
   },
