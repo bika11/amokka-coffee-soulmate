@@ -25,14 +25,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Optimize chunking for better caching
+    // Simplified build configuration to avoid conflicts
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-components': ['@/components/ui'],
           'forms': ['react-hook-form', '@hookform/resolvers'],
-          'chat': ['@/components/chat'],
         },
       },
     },
