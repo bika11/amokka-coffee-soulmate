@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Message } from "@/shared/ai/types";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([
@@ -57,6 +57,8 @@ export function useChat() {
     setIsLoading(true);
 
     try {
+      console.log("Sending message to chat-about-coffee function");
+      
       // Prepare request body with messages and API settings
       const requestBody: any = { 
         messages: [...messages, { content: userMessage, role: "user" }],
@@ -68,11 +70,24 @@ export function useChat() {
         requestBody.customApiKey = apiSettings.apiKey;
       }
 
+      console.log("Request body:", requestBody);
+
       const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
         body: requestBody
       });
 
-      if (error) throw error;
+      console.log("Response data:", data);
+      console.log("Response error:", error);
+
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw new Error(error.message || "Failed to get response from chat service");
+      }
+
+      if (!data || !data.completion) {
+        console.error("Invalid response format:", data);
+        throw new Error("Invalid response format from chat service");
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -81,9 +96,21 @@ export function useChat() {
     } catch (error) {
       console.error("Error getting response:", error);
       
+      let errorMessage = "I'm having trouble responding right now. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("API key")) {
+          errorMessage = "API key configuration issue. Please check your settings or try using your own API key.";
+        } else if (error.message.includes("rate limit")) {
+          errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "Network connection issue. Please check your internet connection and try again.";
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "I'm having trouble responding right now. Please try again or check your API settings.",
+        description: errorMessage,
         variant: "destructive",
       });
       

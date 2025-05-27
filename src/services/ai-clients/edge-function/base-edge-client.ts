@@ -1,5 +1,5 @@
 
-import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
+import { AICompletionParams, AICompletionResult } from "@/shared/ai/types";
 import { BaseAIClient } from "../base-client";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_TABLES } from "@/integrations/supabase/constants";

@@ -1,5 +1,5 @@
 
-import { AICompletionParams, AICompletionResult } from "@/interfaces/ai-client.interface";
+import { AICompletionParams, AICompletionResult } from "@/shared/ai/types";
 import { BaseEdgeFunctionClient } from "./base-edge-client";
 import { handleEdgeFunctionError } from "./error-handler";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,34 +23,24 @@ export class OpenAIEdgeClient extends BaseEdgeFunctionClient {
   
   protected async callEdgeFunction(params: AICompletionParams): Promise<AICompletionResult> {
     try {
-      // Use direct fetch for more control over the request
-      const supabaseEndpoint = import.meta.env.VITE_SUPABASE_URL || 'https://htgacpgppyjonzwkkntl.supabase.co';
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0Z2FjcGdwcHlqb256d2trbbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNDIwOTAsImV4cCI6MjA1MzcxODA5MH0.7cubJomcCG2eF0rv79m67XVQedZQ_NIYbYrY4IbSI2Y';
-      
-      const edgeFunctionUrl = `${supabaseEndpoint}/functions/v1/chat-about-coffee`;
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseAnonKey
-        },
-        body: JSON.stringify({
+      console.log("Using Supabase client for OpenAI Edge Function call");
+      const { data, error } = await supabase.functions.invoke('chat-about-coffee', {
+        body: {
           messages: params.messages,
-          model: this.getModelType(),
+          apiType: this.getModelType(),
           temperature: params.temperature,
           maxTokens: params.maxTokens
-        })
+        }
       });
       
-      if (!response.ok) {
-        // This function throws an error rather than returning a result
-        throw await handleEdgeFunctionError(response, this.getModelType());
+      if (error) {
+        console.error("Supabase Edge Function error:", error);
+        throw new Error(`Error calling Supabase Edge Function: ${error.message}`);
       }
       
-      const data = await response.json();
       return this.processResponse(data);
     } catch (error) {
-      console.error("Error in direct fetch to Edge Function:", error);
+      console.error("Error in OpenAI Edge Function call:", error);
       throw error;
     }
   }
@@ -59,7 +49,6 @@ export class OpenAIEdgeClient extends BaseEdgeFunctionClient {
     if (!data || !data.completion) {
       console.error("Unexpected response format from Edge Function:", data);
       
-      // If data contains an error field, show that to the user
       if (data && data.error) {
         throw new Error(`Error from AI service: ${data.error}`);
       }
